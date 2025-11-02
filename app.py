@@ -73,11 +73,11 @@ st.caption("Estimate your electric vehicle's range based on driving and environm
 st.markdown("<div class='section-title'>⚡ Featured Electric Vehicles</div>", unsafe_allow_html=True)
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.markdown("<div class='ev-card'><img src='https://cdn.motor1.com/images/mgl/xZ8k0/s1/tesla-model-3.jpg' width='100%'><p><b>Tesla Model 3</b></p></div>", unsafe_allow_html=True)
+    st.markdown("<div class='ev-card'><img src='https://upload.wikimedia.org/wikipedia/commons/3/3c/Tesla_Model_3_parked%2C_front_driver_side.jpg' width='100%'><p><b>Tesla Model 3</b></p></div>", unsafe_allow_html=True)
 with col2:
-    st.markdown("<div class='ev-card'><img src='https://cdn.motor1.com/images/mgl/YZ4qB/s1/hyundai-ioniq-5.jpg' width='100%'><p><b>Hyundai Ioniq 5</b></p></div>", unsafe_allow_html=True)
+    st.markdown("<div class='ev-card'><img src='https://upload.wikimedia.org/wikipedia/commons/1/1e/2021_Hyundai_Ioniq_5_Ultimate_77kWh_AWD_Standard_Range_1600cc.jpg' width='100%'><p><b>Hyundai Ioniq 5</b></p></div>", unsafe_allow_html=True)
 with col3:
-    st.markdown("<div class='ev-card'><img src='https://cdn.motor1.com/images/mgl/Vm0Z1/s1/nissan-leaf.jpg' width='100%'><p><b>Nissan Leaf</b></p></div>", unsafe_allow_html=True)
+    st.markdown("<div class='ev-card'><img src='https://upload.wikimedia.org/wikipedia/commons/f/f3/2018_Nissan_Leaf_Tekna_Front.jpg' width='100%'><p><b>Nissan Leaf</b></p></div>", unsafe_allow_html=True)
 
 # --- Input Section ---
 st.markdown("<div class='section-title'>🔧 Input Parameters</div>", unsafe_allow_html=True)
@@ -98,13 +98,13 @@ with col2:
 st.markdown("<div class='section-title'>🚙 Driving Scenario</div>", unsafe_allow_html=True)
 
 if Terrain == "Hilly":
-    st.image("https://cdn.motor1.com/images/mgl/jjjjW/s1/tesla-model-y-mountain.jpg", caption="EV on Hilly Terrain", use_container_width=True)
+    st.image("https://upload.wikimedia.org/wikipedia/commons/b/b0/Tesla_Model_Y_in_Mountains.jpg", caption="EV on Hilly Terrain", use_container_width=True)
 elif Weather == "Rainy":
-    st.image("https://cdn.motor1.com/images/mgl/OO7op/s1/tesla-model-3-rain.jpg", caption="EV in Rainy Weather", use_container_width=True)
+    st.image("https://upload.wikimedia.org/wikipedia/commons/b/b3/Tesla_Model_3_in_rain.jpg", caption="EV in Rainy Weather", use_container_width=True)
 elif Weather == "Hot":
-    st.image("https://cdn.motor1.com/images/mgl/vmmZr/s1/ev-sunny-highway.jpg", caption="EV on Sunny Road", use_container_width=True)
+    st.image("https://upload.wikimedia.org/wikipedia/commons/1/12/Tesla_Model_3_on_highway.jpg", caption="EV on Sunny Road", use_container_width=True)
 else:
-    st.image("https://cdn.motor1.com/images/mgl/xZ8k0/s1/tesla-model-3.jpg", caption="EV on Normal Terrain", use_container_width=True)
+    st.image("https://upload.wikimedia.org/wikipedia/commons/3/3c/Tesla_Model_3_parked%2C_front_driver_side.jpg", caption="EV on Normal Terrain", use_container_width=True)
 
 # --- Prediction Section ---
 st.markdown("---")
@@ -124,7 +124,6 @@ if predict_btn:
 
     predicted_SoC = model.predict(input_data)[0]
 
-    # Dynamic energy rate function
     def dynamic_energy_consumption_rate(speed_kmh, terrain, weather):
         rate = 0.15
         if speed_kmh <= 50:
@@ -137,12 +136,11 @@ if predict_btn:
             rate *= 1.1
         return rate
 
-    battery_capacity_kwh = 40  # Example battery capacity
+    battery_capacity_kwh = 40
     rate = dynamic_energy_consumption_rate(Speed, Terrain, Weather)
     remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
     predicted_range_km = remaining_energy_kwh / rate
 
-    # Results display
     st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
     with st.container():
         st.markdown("<div class='prediction-box'>", unsafe_allow_html=True)
