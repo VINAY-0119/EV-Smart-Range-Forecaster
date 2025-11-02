@@ -18,7 +18,7 @@ def load_model():
 
 model = load_model()
 
-# --- Sleek Modern Styling with Animated Header ---
+# --- Professional Modern CSS (No Blocks, Clean Layout) ---
 st.markdown("""
 <style>
     /* Global */
@@ -28,36 +28,22 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
 
-    /* Hero Section */
+    /* Hero Header */
     .hero {
         text-align: center;
         background: linear-gradient(90deg, #E0F2FE, #F8FAFC);
-        padding: 40px 20px;
-        border-radius: 14px;
+        padding: 35px 15px;
+        border-radius: 12px;
         margin-bottom: 40px;
         box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-        animation: fadeIn 1.5s ease-in;
-    }
-
-    @keyframes fadeIn {
-        0% { opacity: 0; transform: translateY(-10px); }
-        100% { opacity: 1; transform: translateY(0); }
     }
 
     .hero-title {
-        font-size: 46px;
+        font-size: 42px;
         font-weight: 800;
         color: #0F172A;
         letter-spacing: 0.5px;
-        margin-bottom: 8px;
-        line-height: 1.2;
-    }
-
-    .hero-line {
-        font-size: 32px;
-        color: #2563EB;
-        font-weight: 700;
-        margin-top: -8px;
+        margin-bottom: 10px;
     }
 
     .hero-subtitle {
@@ -66,7 +52,6 @@ st.markdown("""
         font-weight: 400;
         max-width: 650px;
         margin: 0 auto;
-        margin-top: 10px;
     }
 
     /* Section Titles */
@@ -78,7 +63,7 @@ st.markdown("""
         margin-bottom: 10px;
     }
 
-    /* Buttons */
+    /* Button */
     .stButton>button {
         background-color: #2563EB;
         color: #FFFFFF;
@@ -104,14 +89,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Animated Hero Header ---
+# --- Hero Section ---
 st.markdown("""
 <div class="hero">
-    <div class="hero-title">⚡ Electric Vehicle</div>
-    <div class="hero-line">Range Predictor 🚗</div>
+    <div class="hero-title">⚡ EV Vehicle Range Predictor 🚗</div>
     <div class="hero-subtitle">
-        Discover how your driving style, weather, and terrain affect your EV’s range.  
-        Get instant insights powered by machine learning.
+        Estimate your electric vehicle's driving range instantly.  
+        Adjust speed, terrain, and weather to see how they affect performance and battery life.
     </div>
 </div>
 """, unsafe_allow_html=True)
