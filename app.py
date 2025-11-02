@@ -52,14 +52,34 @@ st.markdown("""
             font-size: 18px;
             margin-bottom: 10px;
         }
+        .ev-card {
+            background-color: white;
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        .ev-card img {
+            border-radius: 12px;
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# App header
+# Header
 st.title("🚗 EV Range Prediction App")
 st.caption("Estimate your electric vehicle's range based on driving and environmental conditions.")
 
-# Input form layout
+# --- EV Showcase Section ---
+st.markdown("<div class='section-title'>⚡ Featured Electric Vehicles</div>", unsafe_allow_html=True)
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.markdown("<div class='ev-card'><img src='https://cdn.motor1.com/images/mgl/xZ8k0/s1/tesla-model-3.jpg' width='100%'><p><b>Tesla Model 3</b></p></div>", unsafe_allow_html=True)
+with col2:
+    st.markdown("<div class='ev-card'><img src='https://cdn.motor1.com/images/mgl/YZ4qB/s1/hyundai-ioniq-5.jpg' width='100%'><p><b>Hyundai Ioniq 5</b></p></div>", unsafe_allow_html=True)
+with col3:
+    st.markdown("<div class='ev-card'><img src='https://cdn.motor1.com/images/mgl/Vm0Z1/s1/nissan-leaf.jpg' width='100%'><p><b>Nissan Leaf</b></p></div>", unsafe_allow_html=True)
+
+# --- Input Section ---
 st.markdown("<div class='section-title'>🔧 Input Parameters</div>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
@@ -74,7 +94,19 @@ with col2:
     Weather = st.selectbox("Weather Condition", options=["Normal", "Hot", "Cold", "Rainy"])
     Prev_SoC = st.number_input("Previous SoC (%)", min_value=0.0, max_value=100.0, value=85.0)
 
-# Predict button
+# --- Dynamic EV Image ---
+st.markdown("<div class='section-title'>🚙 Driving Scenario</div>", unsafe_allow_html=True)
+
+if Terrain == "Hilly":
+    st.image("https://cdn.motor1.com/images/mgl/jjjjW/s1/tesla-model-y-mountain.jpg", caption="EV on Hilly Terrain", use_container_width=True)
+elif Weather == "Rainy":
+    st.image("https://cdn.motor1.com/images/mgl/OO7op/s1/tesla-model-3-rain.jpg", caption="EV in Rainy Weather", use_container_width=True)
+elif Weather == "Hot":
+    st.image("https://cdn.motor1.com/images/mgl/vmmZr/s1/ev-sunny-highway.jpg", caption="EV on Sunny Road", use_container_width=True)
+else:
+    st.image("https://cdn.motor1.com/images/mgl/xZ8k0/s1/tesla-model-3.jpg", caption="EV on Normal Terrain", use_container_width=True)
+
+# --- Prediction Section ---
 st.markdown("---")
 predict_btn = st.button("🔮 Predict Range")
 
@@ -127,7 +159,6 @@ if predict_btn:
 
     st.success("✅ Prediction complete! Scroll above to review the results.")
 
-# Footer
+# --- Footer ---
 st.markdown("---")
 st.caption("Built with ❤️ using Streamlit & Machine Learning")
-
