@@ -114,15 +114,75 @@ with col1:
     - Efficiency improves with **moderate speeds**
     """)
 
+    # --- Smart Driving Tips Section (Enhanced) ---
     st.markdown("<div class='section-title'>💡 Smart Driving Tip</div>", unsafe_allow_html=True)
+
     tips = [
-        "Keep tire pressure optimal to maximize efficiency.",
-        "Avoid harsh acceleration for longer range.",
-        "Preheat or precool your EV while charging.",
-        "Use regenerative braking effectively in traffic.",
-        "Plan routes that avoid steep inclines."
+        # Efficiency
+        "Maintain steady speeds — avoid aggressive acceleration and braking.",
+        "Use Eco or Efficiency mode during highway drives to reduce consumption.",
+        "Turn off climate control when not needed; it can drain up to 15% of range.",
+        "Avoid idling with AC or heater on when parked — it consumes battery power.",
+        "Plan routes with minimal elevation gain to reduce energy usage.",
+        "Keep windows closed at high speeds to minimize drag.",
+        "Remove roof racks or cargo boxes when not in use to improve aerodynamics.",
+
+        # Battery Health
+        "Avoid charging to 100% or discharging below 20% regularly.",
+        "Use fast charging sparingly; it can shorten long-term battery life.",
+        "If storing your EV for weeks, keep battery around 50–60%.",
+        "Precondition the battery before charging in cold conditions.",
+        "Charge during cooler hours to reduce thermal stress on the battery.",
+        "Don’t leave your EV parked in direct sunlight for extended periods.",
+
+        # Driving & Terrain
+        "Use regenerative braking in city driving to recover lost energy.",
+        "On steep downhill routes, let regen braking slow you naturally.",
+        "When climbing hills, maintain moderate speed to save energy.",
+        "Avoid sudden lane changes or jerky movements — they waste power.",
+
+        # Tire & Maintenance
+        "Check tire pressure monthly — low pressure increases rolling resistance.",
+        "Use low-resistance tires if available for your model.",
+        "Wheel alignment and balanced tires improve efficiency and comfort.",
+        "Keep brakes serviced; regenerative systems work best with clean pads.",
+
+        # Climate & Weather
+        "Preheat or precool your cabin while the EV is plugged in.",
+        "Use seat warmers instead of cabin heating to conserve energy.",
+        "Keep defrosters off when not needed — they draw noticeable power.",
+        "Cold weather can reduce range by up to 30%; drive gently in winter.",
+        "In hot weather, park in shade to prevent battery overheating.",
+
+        # Charging & Planning
+        "Plan long trips with charging stations mapped ahead of time.",
+        "Use smart charging timers to take advantage of off-peak electricity rates.",
+        "Charge little and often instead of running battery low.",
+        "Keep your home charger clean and properly ventilated.",
+        "Monitor your battery health using your EV’s companion app.",
+
+        # Advanced habits
+        "Use cruise control on highways for consistent energy use.",
+        "Avoid unnecessary accessories that consume 12V power.",
+        "Keep your EV software updated — updates often improve efficiency."
     ]
-    st.markdown(f"✅ {random.choice(tips)}")
+
+    if "tip_index" not in st.session_state:
+        st.session_state.tip_index = random.randint(0, len(tips)-1)
+        st.session_state.last_update = time.time()
+
+    if time.time() - st.session_state.last_update > 10:
+        st.session_state.tip_index = (st.session_state.tip_index + 1) % len(tips)
+        st.session_state.last_update = time.time()
+        st.experimental_rerun()
+
+    current_tip = tips[st.session_state.tip_index]
+    st.markdown(f"""
+    <div style='background:#EFF6FF; padding:14px 18px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.06);'>
+        <p style='color:#1E3A8A; font-weight:600; font-size:16px; margin-bottom:6px;'>✅ Smart Tip</p>
+        <p style='color:#1E293B; font-size:15px; margin:0;'>{current_tip}</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # CENTER PANEL – Main Prediction Form
 with col2:
