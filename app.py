@@ -200,4 +200,4 @@ with col3:
     """)
 
 # --- Footer ---
-st.markdown("<div class='footer'>© 2025 AutoRange Technologies | Precision EV Range Intelligence</div>", unsafe_allow_html=True) add some smart driving tipos
+st.markdown("<div class='footer'>© 2025 AutoRange Technologies | Precision EV Range Intelligence</div>", unsafe_allow_html=True) add some more driving tips
