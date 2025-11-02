@@ -3,8 +3,11 @@ import pandas as pd
 import joblib
 import time
 import random
+import plotly.graph_objects as go
 
-# --- App Configuration ---
+# ---------------------------------------------------------
+# APP CONFIGURATION
+# ---------------------------------------------------------
 st.set_page_config(
     page_title="EV Range Predictor",
     page_icon="🚗",
@@ -12,23 +15,26 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# ---------------------------------------------------------
+# LOAD MODEL
+# ---------------------------------------------------------
 @st.cache_resource
 def load_model():
     return joblib.load("ev_range_predictor_reduced.pkl")
 
 model = load_model()
 
-# --- Professional Modern CSS (No Blocks, Clean Layout) ---
+# ---------------------------------------------------------
+# STYLING (CLEAN, MODERN, PROFESSIONAL)
+# ---------------------------------------------------------
 st.markdown("""
 <style>
-    /* Global */
     .main {
         background-color: #FFFFFF;
         color: #111827;
         font-family: 'Inter', sans-serif;
     }
 
-    /* Hero Header */
     .hero {
         text-align: center;
         background: linear-gradient(90deg, #E0F2FE, #F8FAFC);
@@ -54,7 +60,6 @@ st.markdown("""
         margin: 0 auto;
     }
 
-    /* Section Titles */
     .section-title {
         font-size: 18px;
         font-weight: 600;
@@ -63,7 +68,6 @@ st.markdown("""
         margin-bottom: 10px;
     }
 
-    /* Button */
     .stButton>button {
         background-color: #2563EB;
         color: #FFFFFF;
@@ -79,17 +83,22 @@ st.markdown("""
         transform: scale(1.02);
     }
 
-    /* Footer */
     .footer {
         text-align: center;
         font-size: 12px;
         margin-top: 50px;
         color: #6B7280;
     }
+
+    [data-testid='stSidebar'] {
+        display: none;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Hero Section ---
+# ---------------------------------------------------------
+# HERO SECTION
+# ---------------------------------------------------------
 st.markdown("""
 <div class="hero">
     <div class="hero-title">⚡ EV Vehicle Range Predictor 🚗</div>
@@ -100,10 +109,12 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- Layout ---
+# ---------------------------------------------------------
+# LAYOUT: 3 COLUMNS
+# ---------------------------------------------------------
 col1, col2, col3 = st.columns([1.2, 2.3, 1.2])
 
-# LEFT PANEL – EV Insights
+# LEFT PANEL – EV INSIGHTS
 with col1:
     st.markdown("<div class='section-title'>⚙️ EV Insights</div>", unsafe_allow_html=True)
     st.markdown("""
@@ -124,7 +135,7 @@ with col1:
     ]
     st.markdown(f"✅ {random.choice(tips)}")
 
-# CENTER PANEL – Main Prediction Form
+# CENTER PANEL – MAIN PREDICTION FORM
 with col2:
     st.markdown("<div class='section-title'>🧩 Input Parameters</div>", unsafe_allow_html=True)
 
@@ -140,10 +151,13 @@ with col2:
         Weather = st.selectbox("Weather Condition", ["Normal", "Hot", "Cold", "Rainy"])
         Prev_SoC = st.number_input("Previous SoC (%)", 0.0, 100.0, 85.0)
 
+    battery_capacity_kwh = st.slider("Battery Capacity (kWh)", 30, 120, 60)
+
     st.markdown("<br>", unsafe_allow_html=True)
     predict_btn = st.button("🚀 Predict Range")
 
     if predict_btn:
+        # Prepare input safely
         input_data = pd.DataFrame([{
             "SoC": SoC,
             "Speed (Km/h)": Speed,
@@ -155,9 +169,22 @@ with col2:
             "Prev_SoC": Prev_SoC
         }])
 
+        # Encode categorical variables if needed
+        encoded_data = input_data.copy()
+        encoded_data["Terrain"] = encoded_data["Terrain"].map({"Flat": 0, "Hilly": 1})
+        encoded_data["Weather"] = encoded_data["Weather"].map({"Normal": 0, "Hot": 1, "Cold": 2, "Rainy": 3})
+
         with st.spinner("Calculating optimal range..."):
-            time.sleep(1)
-            predicted_SoC = model.predict(input_data)[0]
+            progress = st.progress(0)
+            for i in range(100):
+                time.sleep(0.005)
+                progress.progress(i + 1)
+
+            try:
+                predicted_SoC = float(model.predict(encoded_data)[0])
+            except Exception as e:
+                st.error(f"Prediction failed: {e}")
+                st.stop()
 
             def energy_rate(speed, terrain, weather):
                 rate = 0.15
@@ -172,10 +199,12 @@ with col2:
                 return rate
 
             rate = energy_rate(Speed, Terrain, Weather)
-            battery_capacity_kwh = 40
             remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
             predicted_range_km = remaining_energy_kwh / rate
 
+        # ---------------------------------------------------------
+        # DISPLAY RESULTS
+        # ---------------------------------------------------------
         st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
         colA, colB = st.columns(2)
         with colA:
@@ -189,7 +218,16 @@ with col2:
         """)
         st.success("✅ Prediction complete! Check metrics above.")
 
-# RIGHT PANEL – Quick Stats
+        # Optional Gauge Visualization
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=predicted_SoC,
+            title={'text': "Predicted SoC (%)"},
+            gauge={'axis': {'range': [0, 100]}, 'bar': {'color': "#2563EB"}}
+        ))
+        st.plotly_chart(fig, use_container_width=True)
+
+# RIGHT PANEL – QUICK STATS
 with col3:
     st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
     st.markdown("""
@@ -199,6 +237,6 @@ with col3:
     - **Avg User Range:** 412 km  
     """)
 
-# --- Footer --- 
-<p>© 2025 EV Insights Lab · Built with ❤️ using Streamlit</p>
-</div>
+# FOOTER
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit</div>", unsafe_allow_html=True)
+
