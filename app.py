@@ -3,6 +3,7 @@ import pandas as pd
 import joblib
 import time
 import random
+import matplotlib.pyplot as plt
 
 # --- App Configuration ---
 st.set_page_config(
@@ -199,4 +200,42 @@ with col3:
     - **Avg User Range:** 412 km  
     """)
 
-# --- Footer ---
+# --- Charts Section ---
+st.markdown("<div class='section-title'>📉 Energy Efficiency Overview</div>", unsafe_allow_html=True)
+
+chart_col1, chart_col2 = st.columns(2)
+
+# Chart 1 – Efficiency vs Speed
+with chart_col1:
+    speeds = [20, 40, 60, 80, 100, 120]
+    efficiency = [9.2, 8.5, 7.9, 7.0, 6.2, 5.4]
+
+    fig1, ax1 = plt.subplots()
+    ax1.plot(speeds, efficiency, marker='o', linewidth=2)
+    ax1.set_title("Speed vs Efficiency (km/kWh)")
+    ax1.set_xlabel("Speed (km/h)")
+    ax1.set_ylabel("Efficiency (km/kWh)")
+    ax1.grid(True, linestyle='--', alpha=0.6)
+    st.pyplot(fig1)
+
+# Chart 2 – Range vs Temperature
+with chart_col2:
+    temps = [-10, 0, 10, 20, 30, 40]
+    range_drop = [60, 75, 88, 100, 92, 85]
+
+    fig2, ax2 = plt.subplots()
+    ax2.bar(temps, range_drop, width=4)
+    ax2.set_title("Temperature Impact on Range (%)")
+    ax2.set_xlabel("Temperature (°C)")
+    ax2.set_ylabel("Range Retained (%)")
+    st.pyplot(fig2)
+
+# --- Footer Section ---
+st.markdown("""
+<hr>
+<div class="footer">
+    <p><strong>Keywords:</strong> EV, Electric Vehicle, Battery Range, Efficiency, Charging, Energy Consumption, Weather Impact, Terrain, Speed Optimization</p>
+    <p>Built with ❤️ using Streamlit & Machine Learning</p>
+    <p>© 2025 EV Predictor | Sustainable Mobility Intelligence</p>
+</div>
+""", unsafe_allow_html=True)
