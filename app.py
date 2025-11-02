@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import time
 
 # Page configuration
 st.set_page_config(
@@ -17,71 +18,82 @@ def load_model():
 
 model = load_model()
 
-# Custom CSS for cleaner UI
+# Custom CSS
 st.markdown("""
-    <style>
-        .main {
-            background-color: #F9FAFB;
-        }
-        .stTextInput>div>div>input, .stNumberInput>div>div>input {
-            border-radius: 8px;
-        }
-        .stButton>button {
-            background-color: #2563EB;
-            color: white;
-            border-radius: 10px;
-            padding: 0.6rem 1rem;
-            font-weight: 600;
-        }
-        .stButton>button:hover {
-            background-color: #1E40AF;
-            color: white;
-        }
-        .stSelectbox>div>div>div {
-            border-radius: 8px;
-        }
-        .prediction-box {
-            background-color: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        .section-title {
-            color: #1E3A8A;
-            font-weight: 600;
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-        .ev-card {
-            background-color: white;
-            padding: 10px;
-            border-radius: 15px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            text-align: center;
-        }
-        .ev-card img {
-            border-radius: 12px;
-        }
-    </style>
+<style>
+    .main {
+        background: linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 100%);
+        font-family: "Inter", sans-serif;
+    }
+    .header {
+        background: linear-gradient(90deg, #1E3A8A, #2563EB);
+        color: white;
+        padding: 1.2rem;
+        text-align: center;
+        border-radius: 15px;
+        font-weight: 600;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .stButton>button {
+        background: linear-gradient(90deg, #2563EB, #1E40AF);
+        color: white;
+        border-radius: 10px;
+        padding: 0.6rem 1.2rem;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+    .stButton>button:hover {
+        background: #1E3A8A;
+        transform: scale(1.02);
+    }
+    .section-title {
+        color: #1E3A8A;
+        font-weight: 700;
+        font-size: 19px;
+        margin-bottom: 10px;
+    }
+    .prediction-box {
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(8px);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    }
+    .metric-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+    .footer {
+        text-align: center;
+        font-size: 13px;
+        color: #6B7280;
+        margin-top: 40px;
+    }
+    .glow {
+        text-shadow: 0 0 10px #60A5FA, 0 0 20px #60A5FA, 0 0 30px #2563EB;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% {opacity: 0.9;}
+        50% {opacity: 1;}
+        100% {opacity: 0.9;}
+    }
+</style>
 """, unsafe_allow_html=True)
 
-# Header
-st.title("🚗 EV Range Prediction App")
-st.caption("Estimate your electric vehicle's range based on driving and environmental conditions.")
+# --- Header ---
+st.markdown("<div class='header'><h2>🚗 EV Range Prediction Dashboard</h2><p>Estimate your electric vehicle’s range with intelligent ML predictions.</p></div>", unsafe_allow_html=True)
+st.write("")
 
-# --- EV Showcase Section ---
-st.markdown("<div class='section-title'>⚡ Featured Electric Vehicles</div>", unsafe_allow_html=True)
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.markdown("<div class='ev-card'><img src='https://upload.wikimedia.org/wikipedia/commons/3/3c/Tesla_Model_3_parked%2C_front_driver_side.jpg' width='100%'><p><b>Tesla Model 3</b></p></div>", unsafe_allow_html=True)
-with col2:
-    st.markdown("<div class='ev-card'><img src='https://upload.wikimedia.org/wikipedia/commons/1/1e/2021_Hyundai_Ioniq_5_Ultimate_77kWh_AWD_Standard_Range_1600cc.jpg' width='100%'><p><b>Hyundai Ioniq 5</b></p></div>", unsafe_allow_html=True)
-with col3:
-    st.markdown("<div class='ev-card'><img src='https://upload.wikimedia.org/wikipedia/commons/f/f3/2018_Nissan_Leaf_Tekna_Front.jpg' width='100%'><p><b>Nissan Leaf</b></p></div>", unsafe_allow_html=True)
+# Animated line
+st.markdown("<h4 class='glow' style='text-align:center;'>⚡ Drive Smart. Predict Smarter. ⚡</h4>", unsafe_allow_html=True)
+st.write("")
 
 # --- Input Section ---
 st.markdown("<div class='section-title'>🔧 Input Parameters</div>", unsafe_allow_html=True)
-
 col1, col2 = st.columns(2)
 with col1:
     SoC = st.number_input("State of Charge (SoC) (%)", min_value=0.0, max_value=100.0, value=80.0)
@@ -94,19 +106,7 @@ with col2:
     Weather = st.selectbox("Weather Condition", options=["Normal", "Hot", "Cold", "Rainy"])
     Prev_SoC = st.number_input("Previous SoC (%)", min_value=0.0, max_value=100.0, value=85.0)
 
-# --- Dynamic EV Image ---
-st.markdown("<div class='section-title'>🚙 Driving Scenario</div>", unsafe_allow_html=True)
-
-if Terrain == "Hilly":
-    st.image("https://upload.wikimedia.org/wikipedia/commons/b/b0/Tesla_Model_Y_in_Mountains.jpg", caption="EV on Hilly Terrain", use_container_width=True)
-elif Weather == "Rainy":
-    st.image("https://upload.wikimedia.org/wikipedia/commons/b/b3/Tesla_Model_3_in_rain.jpg", caption="EV in Rainy Weather", use_container_width=True)
-elif Weather == "Hot":
-    st.image("https://upload.wikimedia.org/wikipedia/commons/1/12/Tesla_Model_3_on_highway.jpg", caption="EV on Sunny Road", use_container_width=True)
-else:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/3/3c/Tesla_Model_3_parked%2C_front_driver_side.jpg", caption="EV on Normal Terrain", use_container_width=True)
-
-# --- Prediction Section ---
+# Predict button
 st.markdown("---")
 predict_btn = st.button("🔮 Predict Range")
 
@@ -122,41 +122,49 @@ if predict_btn:
         'Prev_SoC': Prev_SoC
     }])
 
-    predicted_SoC = model.predict(input_data)[0]
+    with st.spinner("🔍 Calculating your vehicle range..."):
+        time.sleep(1.5)
+        predicted_SoC = model.predict(input_data)[0]
 
-    def dynamic_energy_consumption_rate(speed_kmh, terrain, weather):
-        rate = 0.15
-        if speed_kmh <= 50:
-            rate = 0.12
-        elif speed_kmh > 80:
-            rate = 0.18
-        if terrain == 'Hilly':
-            rate *= 1.2
-        if weather == 'Hot':
-            rate *= 1.1
-        return rate
+        def dynamic_energy_consumption_rate(speed_kmh, terrain, weather):
+            rate = 0.15
+            if speed_kmh <= 50:
+                rate = 0.12
+            elif speed_kmh > 80:
+                rate = 0.18
+            if terrain == 'Hilly':
+                rate *= 1.2
+            if weather == 'Hot':
+                rate *= 1.1
+            return rate
 
-    battery_capacity_kwh = 40
-    rate = dynamic_energy_consumption_rate(Speed, Terrain, Weather)
-    remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
-    predicted_range_km = remaining_energy_kwh / rate
+        battery_capacity_kwh = 40
+        rate = dynamic_energy_consumption_rate(Speed, Terrain, Weather)
+        remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
+        predicted_range_km = remaining_energy_kwh / rate
 
+    # Results display
     st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
     with st.container():
         st.markdown("<div class='prediction-box'>", unsafe_allow_html=True)
         colA, colB = st.columns(2)
-        colA.metric(label="Predicted SoC (%)", value=f"{predicted_SoC:.2f}")
-        colB.metric(label="Estimated Range (km)", value=f"{predicted_range_km:.2f}")
+        with colA:
+            st.markdown(f"<div class='metric-card'><h4>🔋 Predicted SoC</h4><h2 style='color:#2563EB;'>{predicted_SoC:.2f}%</h2></div>", unsafe_allow_html=True)
+        with colB:
+            st.markdown(f"<div class='metric-card'><h4>🚘 Estimated Range</h4><h2 style='color:#16A34A;'>{predicted_range_km:.1f} km</h2></div>", unsafe_allow_html=True)
 
         st.progress(predicted_SoC / 100)
         st.markdown(
-            f"🔋 **Remaining Battery Energy:** {remaining_energy_kwh:.2f} kWh  \n"
-            f"⚙️ **Energy Consumption Rate:** {rate:.3f} kWh/km"
+            f"**🔋 Remaining Battery:** {remaining_energy_kwh:.2f} kWh  \n"
+            f"**⚙️ Energy Consumption:** {rate:.3f} kWh/km"
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
-    st.success("✅ Prediction complete! Scroll above to review the results.")
+    st.success("✅ Prediction complete! Your estimated EV range is ready.")
 
 # --- Footer ---
 st.markdown("---")
-st.caption("Built with ❤️ using Streamlit & Machine Learning")
+st.markdown(
+    "<div class='footer'>Made with ⚡ Streamlit & ML | Designed for clean energy enthusiasts 🌍</div>",
+    unsafe_allow_html=True
+)
