@@ -18,52 +18,59 @@ def load_model():
 
 model = load_model()
 
-# --- Professional Dark Theme CSS ---
+# --- Refined Professional CSS (no blue glow, cleaner layout) ---
 st.markdown("""
 <style>
     /* Global Styling */
     .main {
-        background: linear-gradient(180deg, #0B1221, #111827);
-        color: #E2E8F0;
+        background: linear-gradient(180deg, #0D1117, #161B22);
+        color: #E5E7EB;
         font-family: 'Inter', sans-serif;
     }
 
+    /* Headings */
     .header {
         text-align: center;
-        font-size: 32px;
+        font-size: 34px;
         font-weight: 700;
-        color: #3B82F6;
-        margin-bottom: 10px;
-        letter-spacing: 0.5px;
+        color: #F9FAFB;
+        margin-bottom: 6px;
+        letter-spacing: 0.4px;
     }
 
     .subheader {
         text-align: center;
-        color: #94A3B8;
+        color: #9CA3AF;
         margin-bottom: 35px;
         font-size: 15px;
+        font-weight: 400;
     }
 
+    /* Cards */
     .card {
-        background: #1E293B;
-        border-radius: 15px;
-        padding: 22px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        background: #1C1F26;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.25);
         transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
 
     .card:hover {
         transform: translateY(-3px);
-        box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.3);
     }
 
+    /* Section Titles */
     .section-title {
-        font-size: 18px;
+        font-size: 17px;
         font-weight: 600;
-        color: #60A5FA;
+        color: #F3F4F6;
         margin-bottom: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 6px;
     }
 
+    /* Buttons */
     .stButton>button {
         background-color: #2563EB;
         color: white;
@@ -79,6 +86,7 @@ st.markdown("""
         transform: scale(1.02);
     }
 
+    /* Metrics */
     .metric-box {
         background-color: rgba(255,255,255,0.05);
         border-radius: 10px;
@@ -86,11 +94,12 @@ st.markdown("""
         margin-top: 5px;
     }
 
+    /* Footer */
     .footer {
         text-align: center;
         font-size: 12px;
         margin-top: 50px;
-        color: #64748B;
+        color: #6B7280;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -110,7 +119,7 @@ with col1:
     - Typical Battery Capacity: **40–75 kWh**  
     - Average Driving Range: **300–500 km**  
     - Charging Time: **30–60 minutes**  
-    - Optimal Operating Temp: **20–25°C**  
+    - Optimal Temperature: **20–25°C**  
     - Efficiency improves with **moderate speeds**
     """)
     st.markdown("</div>", unsafe_allow_html=True)
@@ -199,7 +208,7 @@ with col2:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# RIGHT PANEL – Analytics Placeholder
+# RIGHT PANEL – Analytics
 with col3:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
@@ -213,4 +222,3 @@ with col3:
 
 # --- Footer ---
 st.markdown("<div class='footer'>© 2025 AutoRange Technologies | Precision EV Range Intelligence</div>", unsafe_allow_html=True)
-
