@@ -18,49 +18,45 @@ def load_model():
 
 model = load_model()
 
-# --- Custom Neon CSS ---
+# --- Neon Dark Theme CSS ---
 st.markdown("""
 <style>
-    /* Animated gradient background */
+    /* Full dark gradient background */
     .main {
-        background: linear-gradient(270deg, #0F172A, #1E3A8A, #2563EB, #0F172A);
-        background-size: 600% 600%;
-        animation: gradientShift 10s ease infinite;
+        background: linear-gradient(135deg, #000000 0%, #0a0f2d 40%, #0a1b3e 100%);
         color: #E0F2FE;
         font-family: 'Inter', sans-serif;
+        transition: all 0.5s ease;
     }
 
-    @keyframes gradientShift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-
-    /* Header styling */
+    /* Glowing header */
     .header {
         text-align: center;
         padding: 1.4rem;
-        border-radius: 15px;
         color: #E0F2FE;
-        text-shadow: 0 0 10px #38BDF8, 0 0 25px #2563EB, 0 0 50px #60A5FA;
+        text-shadow: 0 0 15px #38BDF8, 0 0 30px #2563EB, 0 0 60px #60A5FA;
     }
 
     .glow {
-        color: #93C5FD;
         text-align: center;
-        font-weight: 700;
+        color: #60A5FA;
+        font-weight: 600;
         font-size: 20px;
-        text-shadow: 0 0 8px #38BDF8, 0 0 15px #2563EB, 0 0 25px #60A5FA;
         animation: flicker 3s infinite;
+        text-shadow: 0 0 10px #38BDF8, 0 0 25px #2563EB;
     }
 
     @keyframes flicker {
-        0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
-            opacity: 1;
-        }
-        20%, 24%, 55% {
-            opacity: 0.3;
-        }
+        0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+        20%, 24%, 55% { opacity: 0.3; }
+    }
+
+    .section-title {
+        color: #A5B4FC;
+        font-weight: 700;
+        font-size: 19px;
+        margin-top: 15px;
+        text-shadow: 0 0 8px #2563EB;
     }
 
     .stButton>button {
@@ -70,38 +66,30 @@ st.markdown("""
         padding: 0.7rem 1.4rem;
         font-weight: 700;
         border: none;
-        box-shadow: 0 0 15px #2563EB;
+        box-shadow: 0 0 20px #2563EB;
         transition: all 0.3s ease;
     }
 
     .stButton>button:hover {
-        box-shadow: 0 0 25px #38BDF8;
+        box-shadow: 0 0 35px #38BDF8;
         transform: scale(1.05);
     }
 
-    .section-title {
-        color: #A5B4FC;
-        font-weight: 700;
-        font-size: 19px;
-        margin-top: 10px;
-        text-shadow: 0 0 8px #818CF8;
-    }
-
     .prediction-box {
-        background: rgba(17, 24, 39, 0.6);
-        backdrop-filter: blur(8px);
+        background: rgba(17, 24, 39, 0.65);
+        backdrop-filter: blur(10px);
         border-radius: 20px;
         padding: 25px;
-        box-shadow: 0 0 20px rgba(96, 165, 250, 0.2);
+        box-shadow: 0 0 25px rgba(96, 165, 250, 0.2);
     }
 
     .metric-card {
         background: rgba(30, 58, 138, 0.4);
         border-radius: 15px;
-        padding: 1.2rem;
+        padding: 1rem;
         text-align: center;
-        box-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
         color: #E0F2FE;
+        box-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
         animation: pulse 3s infinite;
     }
 
@@ -111,19 +99,44 @@ st.markdown("""
         100% { box-shadow: 0 0 10px #38BDF8; }
     }
 
+    /* Charging bar animation */
+    .charging-container {
+        width: 100%;
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 15px;
+        overflow: hidden;
+        margin-top: 15px;
+        height: 25px;
+        box-shadow: 0 0 20px rgba(59,130,246,0.3);
+    }
+
+    .charging-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #0EA5E9, #38BDF8, #60A5FA);
+        width: 0%;
+        border-radius: 15px;
+        box-shadow: 0 0 25px #38BDF8;
+        animation: chargeAnimation 3s forwards;
+    }
+
+    @keyframes chargeAnimation {
+        0% { width: 0%; }
+        100% { width: 100%; }
+    }
+
     .footer {
         text-align: center;
-        color: #9CA3AF;
+        color: #94A3B8;
         font-size: 13px;
         margin-top: 40px;
-        text-shadow: 0 0 6px #2563EB;
+        text-shadow: 0 0 5px #2563EB;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Header Section ---
+# --- Header ---
 st.markdown("<div class='header'><h2>🚗 EV Range Prediction Dashboard</h2></div>", unsafe_allow_html=True)
-st.markdown("<div class='glow'>⚡ Neon Intelligence for a Smarter Drive ⚡</div>", unsafe_allow_html=True)
+st.markdown("<div class='glow'>⚡ Neon-Powered Intelligence for Your Drive ⚡</div>", unsafe_allow_html=True)
 st.write("")
 
 # --- Input Section ---
@@ -140,10 +153,10 @@ with col2:
     Weather = st.selectbox("Weather Condition", options=["Normal", "Hot", "Cold", "Rainy"])
     Prev_SoC = st.number_input("Previous SoC (%)", min_value=0.0, max_value=100.0, value=85.0)
 
-# Predict Button
 st.markdown("---")
 predict_btn = st.button("🔮 Predict Range")
 
+# --- Prediction Logic ---
 if predict_btn:
     input_data = pd.DataFrame([{
         'SoC': SoC,
@@ -177,7 +190,7 @@ if predict_btn:
         remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
         predicted_range_km = remaining_energy_kwh / rate
 
-    # Results
+    # --- Results Section ---
     st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
     with st.container():
         st.markdown("<div class='prediction-box'>", unsafe_allow_html=True)
@@ -187,15 +200,24 @@ if predict_btn:
         with colB:
             st.markdown(f"<div class='metric-card'><h4>🚘 Estimated Range</h4><h2>{predicted_range_km:.1f} km</h2></div>", unsafe_allow_html=True)
 
-        st.progress(predicted_SoC / 100)
+        # Neon Charging Animation
+        st.markdown("<div class='section-title'>⚡ Charging Simulation</div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div class="charging-container">
+            <div class="charging-bar"></div>
+        </div>
+        """, unsafe_allow_html=True)
+
         st.markdown(
-            f"**🔋 Remaining Battery:** {remaining_energy_kwh:.2f} kWh  \n"
-            f"**⚙️ Energy Consumption:** {rate:.3f} kWh/km"
+            f"<br>🔋 <b>Remaining Battery:</b> {remaining_energy_kwh:.2f} kWh<br>"
+            f"⚙️ <b>Energy Consumption:</b> {rate:.3f} kWh/km",
+            unsafe_allow_html=True
         )
+
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.success("✅ Neon analysis complete! Your EV range has been illuminated. ⚡")
 
 # --- Footer ---
 st.markdown("---")
-st.markdown("<div class='footer'>💡 Built with Streamlit + Machine Learning | Neon Edition ⚡</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>💡 Built with Streamlit + Machine Learning | Dark Neon Edition ⚡</div>", unsafe_allow_html=True)
