@@ -18,14 +18,15 @@ def load_model():
 
 model = load_model()
 
-# --- Light Professional Theme CSS ---
+# --- Minimal Professional CSS (No Blocks, No Borders) ---
 st.markdown("""
 <style>
-    /* Global Layout */
+    /* Global */
     .main {
-        background: linear-gradient(180deg, #F9FAFB, #FFFFFF);
-        color: #1F2937;
+        background-color: #FFFFFF;
+        color: #111827;
         font-family: 'Inter', sans-serif;
+        padding-top: 20px;
     }
 
     /* Header */
@@ -34,47 +35,31 @@ st.markdown("""
         font-size: 34px;
         font-weight: 700;
         color: #111827;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
         letter-spacing: 0.3px;
     }
 
     .subheader {
         text-align: center;
         color: #6B7280;
-        margin-bottom: 35px;
+        margin-bottom: 40px;
         font-size: 15px;
-    }
-
-    /* Cards */
-    .card {
-        background: #FFFFFF;
-        border-radius: 12px;
-        padding: 22px;
-        border: 1px solid #E5E7EB;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 14px rgba(0,0,0,0.08);
     }
 
     /* Section Titles */
     .section-title {
-        font-size: 17px;
+        font-size: 18px;
         font-weight: 600;
         color: #111827;
-        margin-bottom: 12px;
-        border-bottom: 1px solid #E5E7EB;
-        padding-bottom: 5px;
+        margin-top: 15px;
+        margin-bottom: 10px;
     }
 
     /* Buttons */
     .stButton>button {
         background-color: #2563EB;
-        color: white;
-        border-radius: 8px;
+        color: #FFFFFF;
+        border-radius: 6px;
         font-weight: 600;
         border: none;
         padding: 0.6rem 1.4rem;
@@ -86,35 +71,57 @@ st.markdown("""
         transform: scale(1.02);
     }
 
-    /* Metric Boxes */
+    /* Metrics */
     .metric-box {
-        background-color: #F3F4F6;
-        border-radius: 10px;
-        padding: 12px 15px;
+        background-color: transparent;
+        border: none;
+        padding: 6px 0;
         margin-top: 5px;
-        border: 1px solid #E5E7EB;
     }
 
     /* Footer */
     .footer {
         text-align: center;
         font-size: 12px;
-        margin-top: 45px;
+        margin-top: 50px;
         color: #6B7280;
+    }
+
+    /* Remove all Streamlit default blocks/shadows */
+    div[data-testid="stVerticalBlock"] {
+        background: none !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    div[data-testid="stHorizontalBlock"] {
+        background: none !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    [data-testid="stForm"] {
+        background: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Remove padding inside cards */
+    .block-container {
+        padding-top: 0rem;
+        padding-bottom: 0rem;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Header Section ---
+# --- Header ---
 st.markdown("<div class='header'>EV Range Prediction Dashboard</div>", unsafe_allow_html=True)
 st.markdown("<div class='subheader'>Accurate range estimation powered by machine learning</div>", unsafe_allow_html=True)
 
 # --- Layout ---
-col1, col2, col3 = st.columns([1.3, 2.2, 1.3])
+col1, col2, col3 = st.columns([1.2, 2.3, 1.2])
 
 # LEFT PANEL – EV Insights
 with col1:
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("<div class='section-title'>⚙️ EV Insights</div>", unsafe_allow_html=True)
     st.markdown("""
     - Typical Battery Capacity: **40–75 kWh**  
@@ -123,9 +130,7 @@ with col1:
     - Optimal Temperature: **20–25°C**  
     - Efficiency improves with **moderate speeds**
     """)
-    st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("<div class='card' style='margin-top:20px;'>", unsafe_allow_html=True)
     st.markdown("<div class='section-title'>💡 Smart Driving Tip</div>", unsafe_allow_html=True)
     tips = [
         "Keep tire pressure optimal to maximize efficiency.",
@@ -135,11 +140,9 @@ with col1:
         "Plan routes that avoid steep inclines."
     ]
     st.markdown(f"✅ {random.choice(tips)}")
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # CENTER PANEL – Main Prediction Form
 with col2:
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("<div class='section-title'>🧩 Input Parameters</div>", unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
@@ -207,11 +210,8 @@ with col2:
         """)
         st.success("✅ Prediction complete! Check metrics above.")
 
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# RIGHT PANEL – Analytics
+# RIGHT PANEL – Quick Stats
 with col3:
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
     st.markdown("""
     - **Energy Efficiency:** 91%  
@@ -219,7 +219,6 @@ with col3:
     - **Top Efficient Models:** Model 3, Kona, Leaf  
     - **Avg User Range:** 412 km  
     """)
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # --- Footer ---
 st.markdown("<div class='footer'>© 2025 AutoRange Technologies | Precision EV Range Intelligence</div>", unsafe_allow_html=True)
