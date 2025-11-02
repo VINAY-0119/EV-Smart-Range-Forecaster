@@ -1,0 +1,8 @@
+streamlit
+pandas
+scikit-learn==1.6.1
+joblib
+plotly
+numpy
+openrouteservice
+streamlit-autorefresh
