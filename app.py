@@ -18,56 +18,56 @@ def load_model():
 
 model = load_model()
 
-# --- Refined Professional CSS (no blue glow, cleaner layout) ---
+# --- Light Professional Theme CSS ---
 st.markdown("""
 <style>
-    /* Global Styling */
+    /* Global Layout */
     .main {
-        background: linear-gradient(180deg, #0D1117, #161B22);
-        color: #E5E7EB;
+        background: linear-gradient(180deg, #F9FAFB, #FFFFFF);
+        color: #1F2937;
         font-family: 'Inter', sans-serif;
     }
 
-    /* Headings */
+    /* Header */
     .header {
         text-align: center;
         font-size: 34px;
         font-weight: 700;
-        color: #F9FAFB;
+        color: #111827;
         margin-bottom: 6px;
-        letter-spacing: 0.4px;
+        letter-spacing: 0.3px;
     }
 
     .subheader {
         text-align: center;
-        color: #9CA3AF;
+        color: #6B7280;
         margin-bottom: 35px;
         font-size: 15px;
-        font-weight: 400;
     }
 
     /* Cards */
     .card {
-        background: #1C1F26;
-        border-radius: 14px;
-        padding: 20px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.25);
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        background: #FFFFFF;
+        border-radius: 12px;
+        padding: 22px;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 14px rgba(0,0,0,0.08);
     }
 
     /* Section Titles */
     .section-title {
         font-size: 17px;
         font-weight: 600;
-        color: #F3F4F6;
+        color: #111827;
         margin-bottom: 12px;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-        padding-bottom: 6px;
+        border-bottom: 1px solid #E5E7EB;
+        padding-bottom: 5px;
     }
 
     /* Buttons */
@@ -82,23 +82,24 @@ st.markdown("""
     }
 
     .stButton>button:hover {
-        background-color: #1D4ED8;
+        background-color: #1E40AF;
         transform: scale(1.02);
     }
 
-    /* Metrics */
+    /* Metric Boxes */
     .metric-box {
-        background-color: rgba(255,255,255,0.05);
+        background-color: #F3F4F6;
         border-radius: 10px;
-        padding: 10px 15px;
+        padding: 12px 15px;
         margin-top: 5px;
+        border: 1px solid #E5E7EB;
     }
 
     /* Footer */
     .footer {
         text-align: center;
         font-size: 12px;
-        margin-top: 50px;
+        margin-top: 45px;
         color: #6B7280;
     }
 </style>
