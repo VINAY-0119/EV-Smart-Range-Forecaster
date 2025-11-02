@@ -18,14 +18,16 @@ def load_model():
 
 model = load_model()
 
-# --- Professional CSS ---
+# --- Professional Dark Theme CSS ---
 st.markdown("""
 <style>
+    /* Global Styling */
     .main {
         background: linear-gradient(180deg, #0B1221, #111827);
         color: #E2E8F0;
         font-family: 'Inter', sans-serif;
     }
+
     .header {
         text-align: center;
         font-size: 32px;
@@ -34,12 +36,14 @@ st.markdown("""
         margin-bottom: 10px;
         letter-spacing: 0.5px;
     }
+
     .subheader {
         text-align: center;
         color: #94A3B8;
         margin-bottom: 35px;
         font-size: 15px;
     }
+
     .card {
         background: #1E293B;
         border-radius: 15px;
@@ -47,16 +51,19 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.25);
         transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
+
     .card:hover {
         transform: translateY(-3px);
         box-shadow: 0 6px 18px rgba(0,0,0,0.35);
     }
+
     .section-title {
         font-size: 18px;
         font-weight: 600;
         color: #60A5FA;
         margin-bottom: 12px;
     }
+
     .stButton>button {
         background-color: #2563EB;
         color: white;
@@ -66,16 +73,19 @@ st.markdown("""
         padding: 0.6rem 1.4rem;
         transition: background 0.2s ease, transform 0.15s ease;
     }
+
     .stButton>button:hover {
         background-color: #1D4ED8;
         transform: scale(1.02);
     }
+
     .metric-box {
         background-color: rgba(255,255,255,0.05);
         border-radius: 10px;
         padding: 10px 15px;
         margin-top: 5px;
     }
+
     .footer {
         text-align: center;
         font-size: 12px;
@@ -85,27 +95,39 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Header ---
+# --- Header Section ---
 st.markdown("<div class='header'>EV Range Prediction Dashboard</div>", unsafe_allow_html=True)
 st.markdown("<div class='subheader'>Accurate range estimation powered by machine learning</div>", unsafe_allow_html=True)
 
 # --- Layout ---
 col1, col2, col3 = st.columns([1.3, 2.2, 1.3])
 
-# LEFT COLUMN – EV Info
+# LEFT PANEL – EV Insights
 with col1:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("<div class='section-title'>⚙️ EV Insights</div>", unsafe_allow_html=True)
     st.markdown("""
     - Typical Battery Capacity: **40–75 kWh**  
-    - Average Range: **300–500 km**  
-    - Fast Charging Time: **30–60 minutes**  
-    - Optimal Temp Range: **20–25°C**  
-    - Efficiency Peak: **60–90 km/h**
+    - Average Driving Range: **300–500 km**  
+    - Charging Time: **30–60 minutes**  
+    - Optimal Operating Temp: **20–25°C**  
+    - Efficiency improves with **moderate speeds**
     """)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# CENTER COLUMN – Main Prediction Form
+    st.markdown("<div class='card' style='margin-top:20px;'>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>💡 Smart Driving Tip</div>", unsafe_allow_html=True)
+    tips = [
+        "Keep tire pressure optimal to maximize efficiency.",
+        "Avoid harsh acceleration for longer range.",
+        "Preheat or precool your EV while charging.",
+        "Use regenerative braking effectively in traffic.",
+        "Plan routes that avoid steep inclines."
+    ]
+    st.markdown(f"✅ {random.choice(tips)}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# CENTER PANEL – Main Prediction Form
 with col2:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("<div class='section-title'>🧩 Input Parameters</div>", unsafe_allow_html=True)
@@ -170,68 +192,25 @@ with col2:
             st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown(f"""
-        **Remaining Energy:** {remaining_energy_kwh:.2f} kWh  
+        **Remaining Battery Energy:** {remaining_energy_kwh:.2f} kWh  
         **Energy Consumption Rate:** {rate:.3f} kWh/km
         """)
-        st.success("✅ Prediction complete! Check insights on the right.")
+        st.success("✅ Prediction complete! Check metrics above.")
+
     st.markdown("</div>", unsafe_allow_html=True)
 
-# RIGHT COLUMN – Dynamic Smart Tips
+# RIGHT PANEL – Analytics Placeholder
 with col3:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>💡 Smart Driving Tips</div>", unsafe_allow_html=True)
-
-    tips_general = [
-        "Keep tire pressure optimal to reduce rolling resistance.",
-        "Use eco or comfort driving modes when possible.",
-        "Avoid unnecessary idling, even in EVs.",
-        "Limit HVAC usage when driving long distances."
-    ]
-
-    tips_hot = [
-        "Pre-cool the cabin while charging to save energy.",
-        "Avoid driving at peak afternoon temperatures.",
-        "Keep your EV shaded when parked to protect the battery."
-    ]
-
-    tips_cold = [
-        "Preheat your EV while plugged in to conserve battery.",
-        "Maintain steady speeds to prevent battery drain.",
-        "Avoid aggressive acceleration when the battery is cold."
-    ]
-
-    tips_hilly = [
-        "Use regenerative braking downhill to recover energy.",
-        "Maintain moderate speeds uphill for efficiency.",
-        "Avoid full throttle starts on steep slopes."
-    ]
-
-    tips_rainy = [
-        "Drive smoothly; wet roads increase drag.",
-        "Turn off defoggers when not needed to save power.",
-        "Check tire traction for safety and range."
-    ]
-
-    # Combine dynamic tips
-    selected_tips = tips_general.copy()
-    if Weather == "Hot":
-        selected_tips += tips_hot
-    elif Weather == "Cold":
-        selected_tips += tips_cold
-    elif Weather == "Rainy":
-        selected_tips += tips_rainy
-    if Terrain == "Hilly":
-        selected_tips += tips_hilly
-
-    random.shuffle(selected_tips)
-    for t in selected_tips[:3]:
-        st.markdown(f"🔹 {t}")
-
+    st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
+    st.markdown("""
+    - **Energy Efficiency:** 91%  
+    - **Charging Infrastructure:** 82% coverage  
+    - **Top Efficient Models:** Model 3, Kona, Leaf  
+    - **Avg User Range:** 412 km  
+    """)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- Footer ---
-st.markdown("<div class='footer'>© 2025 AutoRange Technologies | Intelligent EV Range Analytics</div>", unsafe_allow_html=True)
-
-
-
+st.markdown("<div class='footer'>© 2025 AutoRange Technologies | Precision EV Range Intelligence</div>", unsafe_allow_html=True)
 
