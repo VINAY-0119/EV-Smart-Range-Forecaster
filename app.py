@@ -18,7 +18,7 @@ def load_model():
 
 model = load_model()
 
-# --- Minimal Professional CSS (No Blocks, No Borders) ---
+# --- Light, Professional, Modern CSS with Header Image ---
 st.markdown("""
 <style>
     /* Global */
@@ -26,24 +26,42 @@ st.markdown("""
         background-color: #FFFFFF;
         color: #111827;
         font-family: 'Inter', sans-serif;
-        padding-top: 20px;
     }
 
-    /* Header */
-    .header {
-        text-align: center;
-        font-size: 34px;
-        font-weight: 700;
+    /* Hero Section */
+    .hero {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 35px;
+        margin-bottom: 40px;
+        background: linear-gradient(90deg, #EFF6FF, #FFFFFF);
+        padding: 30px 20px;
+        border-radius: 12px;
+    }
+
+    .hero-text {
+        max-width: 600px;
+    }
+
+    .hero-title {
+        font-size: 40px;
+        font-weight: 800;
         color: #111827;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
         letter-spacing: 0.3px;
     }
 
-    .subheader {
-        text-align: center;
+    .hero-subtitle {
         color: #6B7280;
-        margin-bottom: 40px;
-        font-size: 15px;
+        font-size: 16px;
+        font-weight: 400;
+    }
+
+    .hero img {
+        width: 230px;
+        height: auto;
+        border-radius: 10px;
     }
 
     /* Section Titles */
@@ -51,8 +69,8 @@ st.markdown("""
         font-size: 18px;
         font-weight: 600;
         color: #111827;
-        margin-top: 15px;
-        margin-bottom: 10px;
+        margin-top: 10px;
+        margin-bottom: 8px;
     }
 
     /* Buttons */
@@ -71,14 +89,6 @@ st.markdown("""
         transform: scale(1.02);
     }
 
-    /* Metrics */
-    .metric-box {
-        background-color: transparent;
-        border: none;
-        padding: 6px 0;
-        margin-top: 5px;
-    }
-
     /* Footer */
     .footer {
         text-align: center;
@@ -86,36 +96,22 @@ st.markdown("""
         margin-top: 50px;
         color: #6B7280;
     }
-
-    /* Remove all Streamlit default blocks/shadows */
-    div[data-testid="stVerticalBlock"] {
-        background: none !important;
-        box-shadow: none !important;
-        border: none !important;
-    }
-
-    div[data-testid="stHorizontalBlock"] {
-        background: none !important;
-        box-shadow: none !important;
-        border: none !important;
-    }
-
-    [data-testid="stForm"] {
-        background: none !important;
-        box-shadow: none !important;
-    }
-
-    /* Remove padding inside cards */
-    .block-container {
-        padding-top: 0rem;
-        padding-bottom: 0rem;
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Header ---
-st.markdown("<div class='header'>EV Range Prediction Dashboard</div>", unsafe_allow_html=True)
-st.markdown("<div class='subheader'>Accurate range estimation powered by machine learning</div>", unsafe_allow_html=True)
+# --- Header / Hero Section ---
+st.markdown("""
+<div class="hero">
+    <div class="hero-text">
+        <div class="hero-title">EV Vehicle Range Prediction</div>
+        <div class="hero-subtitle">
+            Estimate your electric vehicle's driving range accurately with machine learning.
+            Adjust your inputs to understand how speed, terrain, and weather impact range.
+        </div>
+    </div>
+    <img src="https://cdn.pixabay.com/photo/2022/03/09/13/24/tesla-7058117_1280.png" alt="EV Car">
+</div>
+""", unsafe_allow_html=True)
 
 # --- Layout ---
 col1, col2, col3 = st.columns([1.2, 2.3, 1.2])
@@ -196,13 +192,9 @@ with col2:
         st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
         colA, colB = st.columns(2)
         with colA:
-            st.markdown("<div class='metric-box'>", unsafe_allow_html=True)
             st.metric("Predicted SoC (%)", f"{predicted_SoC:.2f}")
-            st.markdown("</div>", unsafe_allow_html=True)
         with colB:
-            st.markdown("<div class='metric-box'>", unsafe_allow_html=True)
             st.metric("Estimated Range (km)", f"{predicted_range_km:.1f}")
-            st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown(f"""
         **Remaining Battery Energy:** {remaining_energy_kwh:.2f} kWh  
