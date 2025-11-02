@@ -3,184 +3,158 @@ import pandas as pd
 import joblib
 import time
 
-# Page configuration
+# --- Page Config ---
 st.set_page_config(
     page_title="EV Range Prediction App",
     page_icon="🚗",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Load model
+# --- Load Model ---
 @st.cache_resource
 def load_model():
     return joblib.load('ev_range_predictor_reduced.pkl')
 
 model = load_model()
 
-# --- Custom Neon CSS ---
+# --- Custom Professional Styling ---
 st.markdown("""
 <style>
-    /* Animated gradient background */
     .main {
-        background: linear-gradient(270deg, #0F172A, #1E3A8A, #2563EB, #0F172A);
-        background-size: 600% 600%;
-        animation: gradientShift 10s ease infinite;
-        color: #E0F2FE;
+        background-color: #f8fafc;
+        color: #1e293b;
         font-family: 'Inter', sans-serif;
     }
-
-    @keyframes gradientShift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-
-    /* Header styling */
     .header {
         text-align: center;
-        padding: 1.4rem;
-        border-radius: 15px;
-        color: #E0F2FE;
-        text-shadow: 0 0 10px #38BDF8, 0 0 25px #2563EB, 0 0 50px #60A5FA;
+        padding: 1rem 0;
+        color: #1e3a8a;
     }
-
-    .glow {
-        color: #93C5FD;
-        text-align: center;
-        font-weight: 700;
-        font-size: 20px;
-        text-shadow: 0 0 8px #38BDF8, 0 0 15px #2563EB, 0 0 25px #60A5FA;
-        animation: flicker 3s infinite;
-    }
-
-    @keyframes flicker {
-        0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
-            opacity: 1;
-        }
-        20%, 24%, 55% {
-            opacity: 0.3;
-        }
-    }
-
-    .stButton>button {
-        background: linear-gradient(90deg, #2563EB, #38BDF8);
-        color: white;
-        border-radius: 12px;
-        padding: 0.7rem 1.4rem;
-        font-weight: 700;
-        border: none;
-        box-shadow: 0 0 15px #2563EB;
-        transition: all 0.3s ease;
-    }
-
-    .stButton>button:hover {
-        box-shadow: 0 0 25px #38BDF8;
-        transform: scale(1.05);
-    }
-
     .section-title {
-        color: #A5B4FC;
-        font-weight: 700;
-        font-size: 19px;
+        color: #334155;
+        font-weight: 600;
+        font-size: 18px;
         margin-top: 10px;
-        text-shadow: 0 0 8px #818CF8;
     }
-
     .prediction-box {
-        background: rgba(17, 24, 39, 0.6);
-        backdrop-filter: blur(8px);
-        border-radius: 20px;
-        padding: 25px;
-        box-shadow: 0 0 20px rgba(96, 165, 250, 0.2);
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     }
-
     .metric-card {
-        background: rgba(30, 58, 138, 0.4);
-        border-radius: 15px;
+        background: #f1f5f9;
+        border-radius: 10px;
         padding: 1.2rem;
         text-align: center;
-        box-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
-        color: #E0F2FE;
-        animation: pulse 3s infinite;
+        box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
     }
-
-    @keyframes pulse {
-        0% { box-shadow: 0 0 10px #38BDF8; }
-        50% { box-shadow: 0 0 25px #2563EB; }
-        100% { box-shadow: 0 0 10px #38BDF8; }
+    .stButton>button {
+        background-color: #2563eb;
+        color: white;
+        border-radius: 8px;
+        padding: 0.6rem 1.2rem;
+        font-weight: 600;
+        border: none;
+        transition: 0.3s;
     }
-
+    .stButton>button:hover {
+        background-color: #1d4ed8;
+        transform: scale(1.03);
+    }
+    .tips-box, .range-box {
+        background: #f1f5f9;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+        font-size: 14px;
+    }
     .footer {
         text-align: center;
-        color: #9CA3AF;
+        color: #64748b;
         font-size: 13px;
         margin-top: 40px;
-        text-shadow: 0 0 6px #2563EB;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Header Section ---
-st.markdown("<div class='header'><h2>🚗 EV Range Prediction Dashboard</h2></div>", unsafe_allow_html=True)
-st.markdown("<div class='glow'>⚡ Neon Intelligence for a Smarter Drive ⚡</div>", unsafe_allow_html=True)
-st.write("")
+# --- Header ---
+st.markdown("<div class='header'><h2>🚗 EV Range Prediction Dashboard</h2><p>Accurate insights to plan your next drive efficiently.</p></div>", unsafe_allow_html=True)
 
-# --- Input Section ---
-st.markdown("<div class='section-title'>🔧 Input Parameters</div>", unsafe_allow_html=True)
-col1, col2 = st.columns(2)
-with col1:
-    SoC = st.number_input("State of Charge (SoC) (%)", min_value=0.0, max_value=100.0, value=80.0)
-    Speed = st.number_input("Speed (Km/h)", min_value=0.0, max_value=200.0, value=60.0)
-    Temperature = st.number_input("Temperature (°C)", min_value=-20.0, max_value=60.0, value=25.0)
-    Terrain = st.selectbox("Terrain Type", options=["Flat", "Hilly"])
-with col2:
-    Braking = st.number_input("Braking (m/s²)", min_value=0.0, max_value=10.0, value=0.5)
-    Acceleration = st.number_input("Acceleration (m/s²)", min_value=0.0, max_value=10.0, value=1.0)
-    Weather = st.selectbox("Weather Condition", options=["Normal", "Hot", "Cold", "Rainy"])
-    Prev_SoC = st.number_input("Previous SoC (%)", min_value=0.0, max_value=100.0, value=85.0)
+# --- Input + Side Panels Layout ---
+left_col, center_col, right_col = st.columns([1.2, 2.5, 1.2])
 
-# Predict Button
-st.markdown("---")
-predict_btn = st.button("🔮 Predict Range")
+with left_col:
+    st.markdown("### 💡 Efficiency Tips")
+    st.markdown(
+        """
+        <div class='tips-box'>
+        • Maintain moderate speeds (50–80 km/h) for optimal range.  
+        • Avoid sudden acceleration or braking.  
+        • Keep tire pressure optimal.  
+        • Precondition your EV before driving in extreme weather.  
+        • Use Eco mode and minimize AC/heater load.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-if predict_btn:
-    input_data = pd.DataFrame([{
-        'SoC': SoC,
-        'Speed (Km/h)': Speed,
-        'Temperature': Temperature,
-        'Terrain': Terrain,
-        'Braking (m/s²)': Braking,
-        'Acceleration (m/s²)': Acceleration,
-        'Weather': Weather,
-        'Prev_SoC': Prev_SoC
-    }])
+with center_col:
+    # --- Input Section ---
+    st.markdown("<div class='section-title'>🔧 Input Parameters</div>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        SoC = st.number_input("State of Charge (SoC) (%)", min_value=0.0, max_value=100.0, value=80.0)
+        Speed = st.number_input("Speed (Km/h)", min_value=0.0, max_value=200.0, value=60.0)
+        Temperature = st.number_input("Temperature (°C)", min_value=-20.0, max_value=60.0, value=25.0)
+        Terrain = st.selectbox("Terrain Type", options=["Flat", "Hilly"])
+    with col2:
+        Braking = st.number_input("Braking (m/s²)", min_value=0.0, max_value=10.0, value=0.5)
+        Acceleration = st.number_input("Acceleration (m/s²)", min_value=0.0, max_value=10.0, value=1.0)
+        Weather = st.selectbox("Weather Condition", options=["Normal", "Hot", "Cold", "Rainy"])
+        Prev_SoC = st.number_input("Previous SoC (%)", min_value=0.0, max_value=100.0, value=85.0)
 
-    with st.spinner("⚙️ Activating Neon Predictive Engine..."):
-        time.sleep(1.2)
-        predicted_SoC = model.predict(input_data)[0]
+    st.markdown("---")
+    predict_btn = st.button("🚀 Predict Range")
 
-        def dynamic_energy_consumption_rate(speed_kmh, terrain, weather):
-            rate = 0.15
-            if speed_kmh <= 50:
-                rate = 0.12
-            elif speed_kmh > 80:
-                rate = 0.18
-            if terrain == 'Hilly':
-                rate *= 1.2
-            if weather == 'Hot':
-                rate *= 1.1
-            return rate
+    if predict_btn:
+        input_data = pd.DataFrame([{
+            'SoC': SoC,
+            'Speed (Km/h)': Speed,
+            'Temperature': Temperature,
+            'Terrain': Terrain,
+            'Braking (m/s²)': Braking,
+            'Acceleration (m/s²)': Acceleration,
+            'Weather': Weather,
+            'Prev_SoC': Prev_SoC
+        }])
 
-        battery_capacity_kwh = 40
-        rate = dynamic_energy_consumption_rate(Speed, Terrain, Weather)
-        remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
-        predicted_range_km = remaining_energy_kwh / rate
+        with st.spinner("Calculating your EV range..."):
+            time.sleep(1)
+            predicted_SoC = model.predict(input_data)[0]
 
-    # Results
-    st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
-    with st.container():
+            def dynamic_energy_consumption_rate(speed_kmh, terrain, weather):
+                rate = 0.15
+                if speed_kmh <= 50:
+                    rate = 0.12
+                elif speed_kmh > 80:
+                    rate = 0.18
+                if terrain == 'Hilly':
+                    rate *= 1.2
+                if weather == 'Hot':
+                    rate *= 1.1
+                return rate
+
+            battery_capacity_kwh = 40
+            rate = dynamic_energy_consumption_rate(Speed, Terrain, Weather)
+            remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
+            predicted_range_km = remaining_energy_kwh / rate
+
+        # --- Results ---
+        st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
         st.markdown("<div class='prediction-box'>", unsafe_allow_html=True)
+
         colA, colB = st.columns(2)
         with colA:
             st.markdown(f"<div class='metric-card'><h4>🔋 Predicted SoC</h4><h2>{predicted_SoC:.2f}%</h2></div>", unsafe_allow_html=True)
@@ -189,13 +163,27 @@ if predict_btn:
 
         st.progress(predicted_SoC / 100)
         st.markdown(
-            f"**🔋 Remaining Battery:** {remaining_energy_kwh:.2f} kWh  \n"
-            f"**⚙️ Energy Consumption:** {rate:.3f} kWh/km"
+            f"**Remaining Battery:** {remaining_energy_kwh:.2f} kWh  \n"
+            f"**Energy Consumption:** {rate:.3f} kWh/km"
         )
         st.markdown("</div>", unsafe_allow_html=True)
+        st.success("Prediction complete! Drive safely and efficiently.")
 
-    st.success("✅ Neon analysis complete! Your EV range has been illuminated. ⚡")
+with right_col:
+    st.markdown("### 📈 Predicted Range Insights")
+    st.markdown(
+        f"""
+        <div class='range-box'>
+        **Optimal Range:** ~{predicted_range_km * 0.9:.1f} km  
+        **Aggressive Driving Range:** ~{predicted_range_km * 0.7:.1f} km  
+        **Eco Mode Range:** ~{predicted_range_km * 1.1:.1f} km  
+        <hr>
+        <small>These estimates consider driving style, terrain, and weather conditions.</small>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # --- Footer ---
 st.markdown("---")
-st.markdown("<div class='footer'>💡 Built with Streamlit + Machine Learning | Neon Edition ⚡</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>Built with Streamlit + Machine Learning | Smart EV Edition ⚡</div>", unsafe_allow_html=True)
