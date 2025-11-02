@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import random
 import time
+import random
 
+# --- App Configuration ---
 st.set_page_config(
-    page_title="EV Range Prediction App",
+    page_title="EV Range Predictor",
     page_icon="🚗",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -13,156 +14,124 @@ st.set_page_config(
 
 @st.cache_resource
 def load_model():
-    return joblib.load('ev_range_predictor_reduced.pkl')
+    return joblib.load("ev_range_predictor_reduced.pkl")
 
 model = load_model()
 
-# --- Professional Modern CSS ---
+# --- Professional Dark Theme CSS ---
 st.markdown("""
 <style>
-    :root {
-        --primary: #2563eb;
-        --secondary: #1e293b;
-        --bg-light: #f8fafc;
-        --text-dark: #0f172a;
-        --text-light: #e2e8f0;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .main {
-            background: linear-gradient(180deg, #0f172a, #1e293b);
-            color: var(--text-light);
-        }
-        .card {
-            background: rgba(30, 41, 59, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-    }
-
-    @media (prefers-color-scheme: light) {
-        .main {
-            background: linear-gradient(180deg, #f9fafb, #e2e8f0);
-            color: var(--text-dark);
-        }
-        .card {
-            background: white;
-            border: 1px solid #e2e8f0;
-        }
+    /* Global Styling */
+    .main {
+        background: linear-gradient(180deg, #0B1221, #111827);
+        color: #E2E8F0;
+        font-family: 'Inter', sans-serif;
     }
 
     .header {
         text-align: center;
-        padding: 1.5rem;
-        font-size: 30px;
-        font-weight: 800;
-        color: var(--primary);
-        margin-bottom: 20px;
+        font-size: 32px;
+        font-weight: 700;
+        color: #3B82F6;
+        margin-bottom: 10px;
+        letter-spacing: 0.5px;
+    }
+
+    .subheader {
+        text-align: center;
+        color: #94A3B8;
+        margin-bottom: 35px;
+        font-size: 15px;
     }
 
     .card {
+        background: #1E293B;
         border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        padding: 22px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
 
     .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.35);
     }
 
     .section-title {
-        font-weight: 700;
-        color: var(--primary);
         font-size: 18px;
+        font-weight: 600;
+        color: #60A5FA;
         margin-bottom: 12px;
     }
 
     .stButton>button {
-        background: var(--primary);
+        background-color: #2563EB;
         color: white;
-        border-radius: 10px;
-        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
         font-weight: 600;
         border: none;
-        transition: all 0.2s ease;
+        padding: 0.6rem 1.4rem;
+        transition: background 0.2s ease, transform 0.15s ease;
     }
 
     .stButton>button:hover {
-        background: #1e40af;
-        transform: scale(1.03);
+        background-color: #1D4ED8;
+        transform: scale(1.02);
     }
 
-    .prediction-box {
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        margin-top: 10px;
-    }
-
-    .charging-bar-container {
-        width: 100%;
-        height: 20px;
-        background-color: rgba(255,255,255,0.1);
+    .metric-box {
+        background-color: rgba(255,255,255,0.05);
         border-radius: 10px;
-        overflow: hidden;
-        margin-top: 10px;
-    }
-
-    .charging-bar {
-        height: 100%;
-        background: var(--primary);
-        width: 0%;
-        border-radius: 10px;
-        animation: fill 2s forwards;
-    }
-
-    @keyframes fill {
-        from { width: 0%; }
-        to { width: 100%; }
+        padding: 10px 15px;
+        margin-top: 5px;
     }
 
     .footer {
         text-align: center;
-        font-size: 13px;
-        margin-top: 40px;
-        opacity: 0.7;
+        font-size: 12px;
+        margin-top: 50px;
+        color: #64748B;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Header ---
+# --- Header Section ---
 st.markdown("<div class='header'>EV Range Prediction Dashboard</div>", unsafe_allow_html=True)
+st.markdown("<div class='subheader'>Accurate range estimation powered by machine learning</div>", unsafe_allow_html=True)
 
-# --- Layout: Left | Center | Right ---
-col_left, col_center, col_right = st.columns([1.3, 2.2, 1.3])
+# --- Layout ---
+col1, col2, col3 = st.columns([1.3, 2.2, 1.3])
 
-# LEFT COLUMN – Insights
-with col_left:
+# LEFT PANEL – EV Insights
+with col1:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>⚙️ Vehicle Insights</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>⚙️ EV Insights</div>", unsafe_allow_html=True)
     st.markdown("""
-    - **Battery Capacity:** 40–75 kWh  
-    - **Avg Range:** 300–500 km  
-    - **Charging Time:** 30–60 mins  
-    - **Optimal Temp:** 20–25°C  
-    - **Max Speed:** 200 km/h  
-    """)
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    st.markdown("<div class='card' style='margin-top:20px;'>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>📊 System Info</div>", unsafe_allow_html=True)
-    st.markdown("""
-    - **Model Version:** v1.2.0  
-    - **ML Framework:** Scikit-Learn  
-    - **Update Cycle:** Weekly  
-    - **Developer:** AutoRange Labs  
+    - Typical Battery Capacity: **40–75 kWh**  
+    - Average Driving Range: **300–500 km**  
+    - Charging Time: **30–60 minutes**  
+    - Optimal Operating Temp: **20–25°C**  
+    - Efficiency improves with **moderate speeds**
     """)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# CENTER COLUMN – Main Functionality
-with col_center:
+    st.markdown("<div class='card' style='margin-top:20px;'>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>💡 Smart Driving Tip</div>", unsafe_allow_html=True)
+    tips = [
+        "Keep tire pressure optimal to maximize efficiency.",
+        "Avoid harsh acceleration for longer range.",
+        "Preheat or precool your EV while charging.",
+        "Use regenerative braking effectively in traffic.",
+        "Plan routes that avoid steep inclines."
+    ]
+    st.markdown(f"✅ {random.choice(tips)}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# CENTER PANEL – Main Prediction Form
+with col2:
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("<div class='section-title'>🧩 Input Parameters</div>", unsafe_allow_html=True)
+
     c1, c2 = st.columns(2)
     with c1:
         SoC = st.number_input("State of Charge (%)", 0.0, 100.0, 80.0)
@@ -175,22 +144,22 @@ with col_center:
         Weather = st.selectbox("Weather Condition", ["Normal", "Hot", "Cold", "Rainy"])
         Prev_SoC = st.number_input("Previous SoC (%)", 0.0, 100.0, 85.0)
 
-    st.markdown("---")
-    predict_btn = st.button("Predict Range")
+    st.markdown("<br>", unsafe_allow_html=True)
+    predict_btn = st.button("🚀 Predict Range")
 
     if predict_btn:
         input_data = pd.DataFrame([{
-            'SoC': SoC,
-            'Speed (Km/h)': Speed,
-            'Temperature': Temperature,
-            'Terrain': Terrain,
-            'Braking (m/s²)': Braking,
-            'Acceleration (m/s²)': Acceleration,
-            'Weather': Weather,
-            'Prev_SoC': Prev_SoC
+            "SoC": SoC,
+            "Speed (Km/h)": Speed,
+            "Temperature": Temperature,
+            "Terrain": Terrain,
+            "Braking (m/s²)": Braking,
+            "Acceleration (m/s²)": Acceleration,
+            "Weather": Weather,
+            "Prev_SoC": Prev_SoC
         }])
 
-        with st.spinner("Calculating range..."):
+        with st.spinner("Calculating optimal range..."):
             time.sleep(1)
             predicted_SoC = model.predict(input_data)[0]
 
@@ -200,44 +169,47 @@ with col_center:
                     rate = 0.12
                 elif speed > 80:
                     rate = 0.18
-                if terrain == 'Hilly':
+                if terrain == "Hilly":
                     rate *= 1.2
-                if weather == 'Hot':
+                if weather == "Hot":
                     rate *= 1.1
                 return rate
 
-            battery_capacity_kwh = 40
             rate = energy_rate(Speed, Terrain, Weather)
+            battery_capacity_kwh = 40
             remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
             predicted_range_km = remaining_energy_kwh / rate
 
-        st.markdown("<div class='section-title'>📈 Prediction Results</div>", unsafe_allow_html=True)
-        st.markdown("<div class='prediction-box'>", unsafe_allow_html=True)
-        cA, cB = st.columns(2)
-        cA.metric("Predicted SoC (%)", f"{predicted_SoC:.2f}")
-        cB.metric("Estimated Range (km)", f"{predicted_range_km:.1f}")
+        st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
+        colA, colB = st.columns(2)
+        with colA:
+            st.markdown("<div class='metric-box'>", unsafe_allow_html=True)
+            st.metric("Predicted SoC (%)", f"{predicted_SoC:.2f}")
+            st.markdown("</div>", unsafe_allow_html=True)
+        with colB:
+            st.markdown("<div class='metric-box'>", unsafe_allow_html=True)
+            st.metric("Estimated Range (km)", f"{predicted_range_km:.1f}")
+            st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("<div class='charging-bar-container'><div class='charging-bar'></div></div>", unsafe_allow_html=True)
-        st.markdown(
-            f"**Remaining Energy:** {remaining_energy_kwh:.2f} kWh  \n"
-            f"**Consumption Rate:** {rate:.3f} kWh/km"
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
-        st.success("Prediction complete!")
+        st.markdown(f"""
+        **Remaining Battery Energy:** {remaining_energy_kwh:.2f} kWh  
+        **Energy Consumption Rate:** {rate:.3f} kWh/km
+        """)
+        st.success("✅ Prediction complete! Check metrics above.")
 
-# RIGHT COLUMN – Driving Tips
-with col_right:
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>💡 Efficiency Tips</div>", unsafe_allow_html=True)
-    tips = [
-        "Keep tires inflated for optimal range.",
-        "Use gentle acceleration and braking.",
-        "Plan routes with minimal elevation changes.",
-        "Preheat or cool your EV while charging.",
-        "Avoid high speeds for better efficiency."
-    ]
-    st.write(f"👉 {random.choice(tips)}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("---")
-st.markdown("<div class='footer'>© 2025 AutoRange Labs | EV Range Prediction Suite</div>", unsafe_allow_html=True)
+# RIGHT PANEL – Analytics Placeholder
+with col3:
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
+    st.markdown("""
+    - **Energy Efficiency:** 91%  
+    - **Charging Infrastructure:** 82% coverage  
+    - **Top Efficient Models:** Model 3, Kona, Leaf  
+    - **Avg User Range:** 412 km  
+    """)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# --- Footer ---
+st.markdown("<div class='footer'>© 2025 AutoRange Technologies | Precision EV Range Intelligence</div>", unsafe_allow_html=True)
