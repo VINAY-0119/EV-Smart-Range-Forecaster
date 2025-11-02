@@ -18,7 +18,7 @@ def load_model():
 
 model = load_model()
 
-# --- Light, Professional, Modern CSS with Header Image ---
+# --- Professional Modern CSS (No Blocks, Clean Layout) ---
 st.markdown("""
 <style>
     /* Global */
@@ -28,52 +28,42 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
 
-    /* Hero Section */
+    /* Hero Header */
     .hero {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 35px;
-        margin-bottom: 40px;
-        background: linear-gradient(90deg, #EFF6FF, #FFFFFF);
-        padding: 30px 20px;
+        text-align: center;
+        background: linear-gradient(90deg, #E0F2FE, #F8FAFC);
+        padding: 35px 15px;
         border-radius: 12px;
-    }
-
-    .hero-text {
-        max-width: 600px;
+        margin-bottom: 40px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
     .hero-title {
-        font-size: 40px;
+        font-size: 42px;
         font-weight: 800;
-        color: #111827;
-        margin-bottom: 6px;
-        letter-spacing: 0.3px;
+        color: #0F172A;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
     }
 
     .hero-subtitle {
-        color: #6B7280;
         font-size: 16px;
+        color: #475569;
         font-weight: 400;
-    }
-
-    .hero img {
-        width: 230px;
-        height: auto;
-        border-radius: 10px;
+        max-width: 650px;
+        margin: 0 auto;
     }
 
     /* Section Titles */
     .section-title {
         font-size: 18px;
         font-weight: 600;
-        color: #111827;
+        color: #1E293B;
         margin-top: 10px;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
     }
 
-    /* Buttons */
+    /* Button */
     .stButton>button {
         background-color: #2563EB;
         color: #FFFFFF;
@@ -99,17 +89,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Header / Hero Section ---
+# --- Hero Section ---
 st.markdown("""
 <div class="hero">
-    <div class="hero-text">
-        <div class="hero-title">EV Vehicle Range Prediction</div>
-        <div class="hero-subtitle">
-            Estimate your electric vehicle's driving range accurately with machine learning.
-            Adjust your inputs to understand how speed, terrain, and weather impact range.
-        </div>
+    <div class="hero-title">⚡ EV Vehicle Range Predictor 🚗</div>
+    <div class="hero-subtitle">
+        Estimate your electric vehicle's driving range instantly.  
+        Adjust speed, terrain, and weather to see how they affect performance and battery life.
     </div>
-    <img src="https://cdn.pixabay.com/photo/2022/03/09/13/24/tesla-7058117_1280.png" alt="EV Car">
 </div>
 """, unsafe_allow_html=True)
 
