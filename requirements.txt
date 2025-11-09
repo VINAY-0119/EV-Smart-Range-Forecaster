@@ -1,5 +1,5 @@
-streamlit
+streamlit==1.25.0
 scikit-learn==1.0.2
-joblib
-pandas
-openai>=0.27.0
+joblib==1.2.0
+pandas==1.5.3
+openai==0.27.8
