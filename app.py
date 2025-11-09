@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 import time
 import random
-import openai
+import requests
 
 # --- PATCH sklearn _RemainderColsList ISSUE ---
 import sklearn.compose._column_transformer as ctf
@@ -46,20 +46,26 @@ def energy_rate(speed, terrain, weather, braking, acceleration):
     rate *= 1 + 0.05 * braking + 0.07 * acceleration
     return rate
 
-# --- SETUP OPENAI API KEY ---
-openai.api_key = st.secrets["openai"]["api_key"]
-
-def openai_chat_completion(messages, model="gpt-4"):
+# --- GEMINI 2.5 FLASH CHAT FUNCTION ---
+def gemini_chat_completion(messages):
+    api_key = st.secrets["gemini"]["api_key"]
+    url = "https://api.googleai.com/v1/engines/gemini-2.5-flash/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "messages": messages,
+        "max_tokens": 300,
+        "temperature": 0.7
+    }
     try:
-        response = openai.ChatCompletion.create(
-            model=model,
-            messages=messages,
-            temperature=0.7,
-            max_tokens=300,
-        )
-        return response.choices[0].message["content"]
+        response = requests.post(url, json=data, headers=headers)
+        response.raise_for_status()
+        result = response.json()
+        return result["choices"][0]["message"]["content"]
     except Exception as e:
-        return f"⚠️ OpenAI API error: {type(e).__name__} - {e}"
+        return f"⚠️ Gemini API error: {type(e).__name__} - {e}"
 
 # --- PAGE STYLING ---
 st.markdown("""
@@ -178,9 +184,9 @@ with col3:
     - **Avg User Range:** 412 km  
     """)
 
-# --- CHATBOT SECTION ---
+# --- CHATBOT SECTION USING GEMINI 2.5 FLASH ---
 st.divider()
-st.markdown("<div class='section-title'>🤖 EV Chat Assistant</div>", unsafe_allow_html=True)
+st.markdown("<div class='section-title'>🤖 EV Chat Assistant (Gemini 2.5 Flash)</div>", unsafe_allow_html=True)
 st.info("Ask questions like: 'What’s my range at 100 km/h in hot weather on hilly terrain?' or 'How does cold weather affect my EV?'")
 
 if "chat_messages" not in st.session_state:
@@ -198,7 +204,7 @@ if prompt:
         st.markdown(prompt)
 
     with st.spinner("Thinking..."):
-        ai_text = openai_chat_completion(st.session_state.chat_messages)
+        ai_text = gemini_chat_completion(st.session_state.chat_messages)
 
     with st.chat_message("assistant"):
         st.markdown(ai_text)
@@ -207,4 +213,4 @@ if prompt:
     st.session_state.processing = False
 
 # --- FOOTER ---
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Gemini 2.5 Flash</div>", unsafe_allow_html=True)
