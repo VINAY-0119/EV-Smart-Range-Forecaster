@@ -6,19 +6,14 @@ import random
 from openai import OpenAI
 from google.ai import generativelanguage as glm
 
-# ================================
 # --- PATCH sklearn _RemainderColsList ISSUE ---
-# ================================
 import sklearn.compose._column_transformer as ctf
-
 if not hasattr(ctf, '_RemainderColsList'):
     class _RemainderColsList(list):
         pass
     ctf._RemainderColsList = _RemainderColsList
 
-# ================================
 # --- PAGE CONFIGURATION ---
-# ================================
 st.set_page_config(
     page_title="EV Range Predictor",
     page_icon="🚗",
@@ -26,9 +21,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ================================
 # --- LOAD ML MODEL ---
-# ================================
 @st.cache_resource
 def load_model():
     try:
@@ -43,9 +36,7 @@ def load_model():
 
 model = load_model()
 
-# ================================
-# --- HELPER FUNCTIONS ---
-# ================================
+# --- HELPER FUNCTION FOR ENERGY RATE ---
 def energy_rate(speed, terrain, weather, braking, acceleration):
     rate = 0.15
     if speed <= 50: rate = 0.12
@@ -56,9 +47,7 @@ def energy_rate(speed, terrain, weather, braking, acceleration):
     rate *= 1 + 0.05 * braking + 0.07 * acceleration
     return rate
 
-# ================================
 # --- SETUP OPENAI API CLIENT ---
-# ================================
 openai_api_available = False
 openai_client = None
 
@@ -66,7 +55,7 @@ if "OPENAI_API_KEY" in st.secrets:
     openai_client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
     openai_api_available = True
 else:
-    st.warning("⚠️ OpenAI API key not found in secrets. Chatbot disabled.")
+    st.warning("⚠️ OpenAI API key not found in secrets. OpenAI chatbot disabled.")
 
 def openai_chat_response(prompt):
     try:
@@ -80,36 +69,35 @@ def openai_chat_response(prompt):
     except Exception as e:
         return f"⚠️ OpenAI API error: {type(e).__name__} - {e}"
 
-# ================================
 # --- SETUP GOOGLE GENERATIVE LANGUAGE CLIENT ---
-# ================================
 google_api_available = False
 google_client = None
 
 if "google" in st.secrets and "api_key" in st.secrets["google"]:
-    google_client = glm.TextServiceClient(
-        client_options={"api_key": st.secrets["google"]["api_key"]}
-    )
-    google_api_available = True
+    try:
+        google_client = glm.TextServiceClient(
+            client_options={"api_key": st.secrets["google"]["api_key"]}
+        )
+        google_api_available = True
+    except Exception as e:
+        st.warning(f"⚠️ Google Generative Language API client init error: {type(e).__name__} - {e}")
 else:
     st.warning("⚠️ Google Generative Language API key not found in secrets. Google chatbot disabled.")
 
-def google_generate_text(prompt_text):
+def google_generate_text(prompt_text, model_name="models/chat-bison-001"):
     try:
         request = glm.GenerateTextRequest(
-            model="models/text-bison-001",
+            model=model_name,
             prompt=glm.TextPrompt(text=prompt_text),
             temperature=0.7,
-            max_output_tokens=300  # <-- Correct field name
+            max_output_tokens=300  # Correct field for Google Gen Lang API
         )
         response = google_client.generate_text(request=request)
         return response.candidates[0].output
     except Exception as e:
         return f"⚠️ Google API error: {type(e).__name__} - {e}"
 
-# ================================
 # --- PAGE STYLING ---
-# ================================
 st.markdown("""
 <style>
     .main { background-color: #FFFFFF; color: #111827; font-family: 'Inter', sans-serif; }
@@ -128,9 +116,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ================================
 # --- HERO SECTION ---
-# ================================
 st.markdown("""
 <div class="hero">
     <div class="hero-title">⚡ EV Vehicle Range Predictor 🚗</div>
@@ -141,9 +127,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ================================
 # --- MAIN LAYOUT ---
-# ================================
 col1, col2, col3 = st.columns([1.2, 2.3, 1.2])
 
 with col1:
@@ -230,9 +214,7 @@ with col3:
     - **Avg User Range:** 412 km  
     """)
 
-# ================================
 # --- CHATBOT SECTION ---
-# ================================
 st.divider()
 st.markdown("<div class='section-title'>🤖 EV Chat Assistant</div>", unsafe_allow_html=True)
 st.info("Ask things like: 'What’s my range at 100 km/h in hot weather on hilly terrain?' or 'How does cold weather affect my EV?'")
@@ -242,7 +224,8 @@ if "chat_messages" not in st.session_state:
 if "processing" not in st.session_state:
     st.session_state.processing = False
 
-# Display chat history
+model_choice = st.selectbox("Choose AI Model for Chatbot", ["OpenAI GPT-3.5", "Google Bison", "Google Gemini"])
+
 for msg in st.session_state.chat_messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
@@ -259,13 +242,12 @@ if prompt:
     with st.spinner("Thinking..."):
         ai_text = "⚠️ No API available."
 
-        # Try OpenAI first
-        if openai_api_available:
+        if model_choice == "OpenAI GPT-3.5" and openai_api_available:
             ai_text = openai_chat_response(prompt)
-
-        # If OpenAI unavailable, try Google Generative Language API
-        elif google_api_available:
-            ai_text = google_generate_text(prompt)
+        elif model_choice == "Google Gemini" and google_api_available:
+            ai_text = google_generate_text(prompt, model_name="models/gemini-1")
+        elif model_choice == "Google Bison" and google_api_available:
+            ai_text = google_generate_text(prompt, model_name="models/chat-bison-001")
 
     with st.chat_message("assistant"):
         st.markdown(ai_text)
@@ -273,7 +255,5 @@ if prompt:
     st.session_state.chat_messages.append({"role": "assistant", "content": ai_text})
     st.session_state.processing = False
 
-# ================================
 # --- FOOTER ---
-# ================================
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI GPT + Google Generative Language</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI GPT + Google Generative Language (Gemini)</div>", unsafe_allow_html=True)
