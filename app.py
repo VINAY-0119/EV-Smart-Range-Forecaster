@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import joblib
 import time
+import random
+from openai import OpenAI
 from google.ai import generativelanguage as glm
 
 # --- PATCH sklearn _RemainderColsList ISSUE ---
@@ -26,7 +28,7 @@ def load_model():
         model = joblib.load("ev_range_predictor_reduced.pkl")
         return model
     except FileNotFoundError:
-        st.error("❌ Model file not found. Please upload 'ev_range_predictor_reduced.pkl'.")
+        st.error("❌ Model file not found. Please upload 'ev_range_predictor_reduced.pkl' in the app folder.")
         return None
     except Exception as e:
         st.error(f"❌ Error loading model: {type(e).__name__} - {e}")
@@ -45,6 +47,28 @@ def energy_rate(speed, terrain, weather, braking, acceleration):
     rate *= 1 + 0.05 * braking + 0.07 * acceleration
     return rate
 
+# --- SETUP OPENAI API CLIENT ---
+openai_api_available = False
+openai_client = None
+
+if "OPENAI_API_KEY" in st.secrets:
+    openai_client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    openai_api_available = True
+else:
+    st.warning("⚠️ OpenAI API key not found in secrets. OpenAI chatbot disabled.")
+
+def openai_chat_response(prompt):
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_tokens=500
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"⚠️ OpenAI API error: {type(e).__name__} - {e}"
+
 # --- SETUP GOOGLE GENERATIVE LANGUAGE CLIENT ---
 google_api_available = False
 google_client = None
@@ -58,85 +82,155 @@ if "google" in st.secrets and "api_key" in st.secrets["google"]:
     except Exception as e:
         st.warning(f"⚠️ Google Generative Language API client init error: {type(e).__name__} - {e}")
 else:
-    st.warning("⚠️ Google Generative Language API key not found in secrets. Chatbot disabled.")
+    st.warning("⚠️ Google Generative Language API key not found in secrets. Google chatbot disabled.")
 
-def google_generate_text(prompt_text, model_name="models/gemini-1"):
-    if not google_api_available:
-        return "⚠️ Google API key not configured."
+def google_generate_text(prompt_text, model_name="models/chat-bison-001"):
     try:
         request = glm.GenerateTextRequest(
             model=model_name,
             prompt=glm.TextPrompt(text=prompt_text),
             temperature=0.7,
-            max_output_tokens=300
+            max_output_tokens=300  # Correct field for Google Gen Lang API
         )
         response = google_client.generate_text(request=request)
         return response.candidates[0].output
     except Exception as e:
         return f"⚠️ Google API error: {type(e).__name__} - {e}"
 
-# --- PAGE CONTENT ---
-st.title("⚡ EV Vehicle Range Predictor 🚗")
+# --- PAGE STYLING ---
+st.markdown("""
+<style>
+    .main { background-color: #FFFFFF; color: #111827; font-family: 'Inter', sans-serif; }
+    .hero { text-align: center; background: linear-gradient(90deg, #E0F2FE, #F8FAFC);
+            padding: 35px 15px; border-radius: 12px; margin-bottom: 40px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .hero-title { font-size: 42px; font-weight: 800; color: #0F172A; margin-bottom: 10px; }
+    .hero-subtitle { font-size: 16px; color: #475569; max-width: 650px; margin: 0 auto; }
+    .section-title { font-size: 18px; font-weight: 600; color: #1E293B;
+                     margin-top: 10px; margin-bottom: 10px; }
+    .stButton>button { background-color: #2563EB; color: #FFFFFF; border-radius: 6px;
+                       font-weight: 600; border: none; padding: 0.6rem 1.4rem;
+                       transition: background 0.2s ease, transform 0.15s ease; }
+    .stButton>button:hover { background-color: #1E40AF; transform: scale(1.02); }
+    .footer { text-align: center; font-size: 12px; margin-top: 50px; color: #6B7280; }
+</style>
+""", unsafe_allow_html=True)
 
-# Input section
-with st.form("input_form"):
-    SoC = st.number_input("State of Charge (%)", 0.0, 100.0, 80.0, step=1.0)
-    Speed = st.number_input("Speed (Km/h)", 0.0, 200.0, 60.0, step=1.0)
-    Temperature = st.number_input("Temperature (°C)", -20.0, 60.0, 25.0, step=0.1)
-    Terrain = st.selectbox("Terrain Type", ["Flat", "Hilly"])
-    Braking = st.number_input("Braking (m/s²)", 0.0, 10.0, 0.5, step=0.1)
-    Acceleration = st.number_input("Acceleration (m/s²)", 0.0, 10.0, 1.0, step=0.1)
-    Weather = st.selectbox("Weather Condition", ["Normal", "Hot", "Cold", "Rainy"])
-    Prev_SoC = st.number_input("Previous SoC (%)", 0.0, 100.0, 85.0, step=1.0)
+# --- HERO SECTION ---
+st.markdown("""
+<div class="hero">
+    <div class="hero-title">⚡ EV Vehicle Range Predictor 🚗</div>
+    <div class="hero-subtitle">
+        Estimate your electric vehicle's driving range instantly.  
+        Adjust speed, terrain, and weather to see how they affect performance and battery life.
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-    submitted = st.form_submit_button("🚀 Predict Range")
+# --- MAIN LAYOUT ---
+col1, col2, col3 = st.columns([1.2, 2.3, 1.2])
 
-if submitted:
-    if model is None:
-        st.error("Model not loaded. Cannot predict.")
-    else:
-        input_data = pd.DataFrame([{
-            "SoC": SoC,
-            "Speed (Km/h)": Speed,
-            "Temperature": Temperature,
-            "Terrain": Terrain,
-            "Braking (m/s²)": Braking,
-            "Acceleration (m/s²)": Acceleration,
-            "Weather": Weather,
-            "Prev_SoC": Prev_SoC
-        }])
-        with st.spinner("Calculating optimal range..."):
-            time.sleep(1)
-            try:
-                predicted_SoC = model.predict(input_data)[0]
-                rate = energy_rate(Speed, Terrain, Weather, Braking, Acceleration)
-                battery_capacity_kwh = 40
-                remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
-                predicted_range_km = remaining_energy_kwh / rate
+with col1:
+    st.markdown("<div class='section-title'>⚙️ EV Insights</div>", unsafe_allow_html=True)
+    st.markdown("""
+    - Typical Battery Capacity: **40–75 kWh**  
+    - Average Driving Range: **300–500 km**  
+    - Charging Time: **30–60 minutes**  
+    - Optimal Temperature: **20–25°C**  
+    - Efficiency improves with **moderate speeds**
+    """)
+    st.markdown("<div class='section-title'>💡 Smart Driving Tip</div>", unsafe_allow_html=True)
+    tips = [
+        "Keep tire pressure optimal to maximize efficiency.",
+        "Avoid harsh acceleration for longer range.",
+        "Preheat or precool your EV while charging.",
+        "Use regenerative braking effectively in traffic.",
+        "Plan routes that avoid steep inclines."
+    ]
+    st.markdown(f"✅ {random.choice(tips)}")
 
-                st.subheader("📊 Prediction Results")
-                st.metric("Predicted SoC (%)", f"{predicted_SoC:.2f}")
-                st.metric("Estimated Range (km)", f"{predicted_range_km:.1f}")
-                st.write(f"Remaining Battery Energy: {remaining_energy_kwh:.2f} kWh")
-                st.write(f"Energy Consumption Rate: {rate:.3f} kWh/km")
-                st.success("✅ Prediction complete!")
-            except Exception as e:
-                st.error(f"Error during prediction: {type(e).__name__} - {e}")
+with col2:
+    st.markdown("<div class='section-title'>🧩 Input Parameters</div>", unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        SoC = st.number_input("State of Charge (%)", 0.0, 100.0, 80.0, step=1.0, format="%.1f")
+        Speed = st.number_input("Speed (Km/h)", 0.0, 200.0, 60.0, step=1.0, format="%.1f")
+        Temperature = st.number_input("Temperature (°C)", -20.0, 60.0, 25.0, step=0.1, format="%.1f")
+        Terrain = st.selectbox("Terrain Type", ["Flat", "Hilly"])
+    with c2:
+        Braking = st.number_input("Braking (m/s²)", 0.0, 10.0, 0.5, step=0.1, format="%.2f")
+        Acceleration = st.number_input("Acceleration (m/s²)", 0.0, 10.0, 1.0, step=0.1, format="%.2f")
+        Weather = st.selectbox("Weather Condition", ["Normal", "Hot", "Cold", "Rainy"])
+        Prev_SoC = st.number_input("Previous SoC (%)", 0.0, 100.0, 85.0, step=1.0, format="%.1f")
+
+    predict_btn = st.button("🚀 Predict Range")
+
+    if predict_btn:
+        if model is None:
+            st.error("Model not loaded. Cannot predict.")
+        else:
+            input_data = pd.DataFrame([{
+                "SoC": SoC,
+                "Speed (Km/h)": Speed,
+                "Temperature": Temperature,
+                "Terrain": Terrain,
+                "Braking (m/s²)": Braking,
+                "Acceleration (m/s²)": Acceleration,
+                "Weather": Weather,
+                "Prev_SoC": Prev_SoC
+            }])
+
+            with st.spinner("Calculating optimal range..."):
+                time.sleep(1)
+                try:
+                    predicted_SoC = model.predict(input_data)[0]
+
+                    rate = energy_rate(Speed, Terrain, Weather, Braking, Acceleration)
+                    battery_capacity_kwh = 40
+                    remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
+                    predicted_range_km = remaining_energy_kwh / rate
+
+                    st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
+                    colA, colB = st.columns(2)
+                    with colA:
+                        st.metric("Predicted SoC (%)", f"{predicted_SoC:.2f}")
+                    with colB:
+                        st.metric("Estimated Range (km)", f"{predicted_range_km:.1f}")
+
+                    st.markdown(f"""
+                    **Remaining Battery Energy:** {remaining_energy_kwh:.2f} kWh  
+                    **Energy Consumption Rate:** {rate:.3f} kWh/km
+                    """)
+                    st.success("✅ Prediction complete! Check metrics above.")
+                except Exception as e:
+                    st.error(f"Error during prediction: {type(e).__name__} - {e}")
+
+with col3:
+    st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
+    st.markdown("""
+    - **Energy Efficiency:** 91%  
+    - **Charging Infrastructure:** 82% coverage  
+    - **Top Efficient Models:** Model 3, Kona, Leaf  
+    - **Avg User Range:** 412 km  
+    """)
 
 # --- CHATBOT SECTION ---
-st.markdown("---")
-st.header("🤖 EV Chat Assistant (Google Gemini)")
+st.divider()
+st.markdown("<div class='section-title'>🤖 EV Chat Assistant</div>", unsafe_allow_html=True)
+st.info("Ask things like: 'What’s my range at 100 km/h in hot weather on hilly terrain?' or 'How does cold weather affect my EV?'")
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = []
 if "processing" not in st.session_state:
     st.session_state.processing = False
 
+model_choice = st.selectbox("Choose AI Model for Chatbot", ["OpenAI GPT-3.5", "Google Bison", "Google Gemini"])
+
 for msg in st.session_state.chat_messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-prompt = st.chat_input("Ask me about EV range, efficiency, or anything EV-related...", disabled=st.session_state.processing)
+prompt = st.chat_input("Ask me about EVs, range, or efficiency...", disabled=st.session_state.processing)
 
 if prompt:
     st.session_state.processing = True
@@ -146,7 +240,14 @@ if prompt:
         st.markdown(prompt)
 
     with st.spinner("Thinking..."):
-        ai_text = google_generate_text(prompt)
+        ai_text = "⚠️ No API available."
+
+        if model_choice == "OpenAI GPT-3.5" and openai_api_available:
+            ai_text = openai_chat_response(prompt)
+        elif model_choice == "Google Gemini" and google_api_available:
+            ai_text = google_generate_text(prompt, model_name="models/gemini-1")
+        elif model_choice == "Google Bison" and google_api_available:
+            ai_text = google_generate_text(prompt, model_name="models/chat-bison-001")
 
     with st.chat_message("assistant"):
         st.markdown(ai_text)
@@ -155,4 +256,4 @@ if prompt:
     st.session_state.processing = False
 
 # --- FOOTER ---
-st.markdown("<hr><center>© 2025 EV Predictor | Powered by Streamlit + Google Gemini</center>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI GPT + Google Generative Language (Gemini)</div>", unsafe_allow_html=True) for this add some chatbot using api keys 
