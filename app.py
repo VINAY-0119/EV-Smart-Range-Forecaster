@@ -72,7 +72,7 @@ openai_api_available = setup_openai()
 def openai_chat_response(prompt):
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",  # or "gpt-3.5-turbo"
+            model="3.5-turbo",  # or "gpt-3.5-turbo"
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
             max_tokens=500
