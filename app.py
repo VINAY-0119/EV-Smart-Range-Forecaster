@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 import time
 import random
-from openai import OpenAI
+import openai
 
 # --- App Configuration ---
 st.set_page_config(
@@ -13,17 +13,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Load Model ---
 @st.cache_resource
 def load_model():
     return joblib.load("ev_range_predictor_reduced.pkl")
 
 model = load_model()
 
-# --- Initialize OpenAI Client ---
-client = OpenAI(api_key=st.secrets["openai"]["api_key"])
-
-# --- Modern CSS ---
+# --- Professional Modern CSS (Clean Layout + Floating Chat) ---
 st.markdown("""
 <style>
     /* Global */
@@ -92,10 +88,28 @@ st.markdown("""
         color: #6B7280;
     }
 
-    /* Chat styling */
-    .stChatMessage {
+    /* Floating Chatbox */
+    div[data-testid="stChatInput"] {
+        position: fixed;
+        bottom: 20px;
+        right: 25px;
+        width: 340px !important;
+        z-index: 100;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
         border-radius: 10px;
-        margin-bottom: 10px;
+        background-color: #FFFFFF;
+    }
+
+    [data-testid="stChatMessageContainer"] {
+        max-width: 360px;
+        position: fixed;
+        bottom: 80px;
+        right: 25px;
+        z-index: 99;
+        background: #F9FAFB;
+        border-radius: 12px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+        padding: 8px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -200,7 +214,7 @@ with col2:
         """)
         st.success("✅ Prediction complete! Check metrics above.")
 
-# RIGHT PANEL – Quick Stats + Chatbot
+# RIGHT PANEL – Quick Stats
 with col3:
     st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
     st.markdown("""
@@ -210,41 +224,35 @@ with col3:
     - **Avg User Range:** 412 km  
     """)
 
-    st.markdown("<div class='section-title'>💬 Ask EV Assistant</div>", unsafe_allow_html=True)
+# --- Floating Chatbot Assistant ---
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "assistant", "content": "Hi there! I'm your EV assistant. How can I help you today?"}
+    ]
 
-    # Chat session state
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+# Display chat history (floating container)
+for msg in st.session_state.messages:
+    if msg["role"] == "user":
+        st.chat_message("user").write(msg["content"])
+    else:
+        st.chat_message("assistant").write(msg["content"])
 
-    # Display chat messages
-    for msg in st.session_state.chat_history:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+# Chat input (bottom right)
+if prompt := st.chat_input("Ask me about EV range, batteries, or driving tips..."):
+    st.chat_message("user").write(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # User input
-    user_input = st.chat_input("Ask me anything about EV performance or range...")
-    if user_input:
-        st.session_state.chat_history.append({"role": "user", "content": user_input})
-        with st.chat_message("user"):
-            st.markdown(user_input)
+    with st.chat_message("assistant"):
+        with st.spinner("Thinking..."):
+            openai.api_key = "YOUR_API_KEY_HERE"  # ← Replace this with your API key
+            response = openai.ChatCompletion.create(
+                model="gpt-4o-mini",
+                messages=st.session_state.messages
+            )
+            reply = response["choices"][0]["message"]["content"]
+            st.write(reply)
 
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                try:
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[
-                            {"role": "system", "content": "You are an expert EV assistant. Keep answers concise, clear, and helpful."},
-                            *st.session_state.chat_history
-                        ],
-                        max_tokens=300,
-                    )
-                    reply = response.choices[0].message.content
-                except Exception as e:
-                    reply = f"⚠️ Error: {e}"
+    st.session_state.messages.append({"role": "assistant", "content": reply})
 
-                st.markdown(reply)
-                st.session_state.chat_history.append({"role": "assistant", "content": reply})
-
-# --- Footer --- 
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit</div>", unsafe_allow_html=True)
+# --- Footer ---
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI</div>", unsafe_allow_html=True)
