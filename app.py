@@ -4,8 +4,9 @@ import joblib
 import time
 import random
 import google.generativeai as genai
+from google.generativeai.types import GenerationConfig, FunctionDeclaration
 
-# --- App Configuration ---
+# --- Page Configuration ---
 st.set_page_config(
     page_title="EV Range Predictor",
     page_icon="🚗",
@@ -13,26 +14,73 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# --- Load ML Model ---
 @st.cache_resource
 def load_model():
     return joblib.load("ev_range_predictor_reduced.pkl")
 
 model = load_model()
 
+# --- Configure Gemini Chatbot ---
+@st.cache_resource
+def load_genai_model():
+    """Connects to Gemini API and sets up the EV chat model."""
+    try:
+        API_KEY = st.secrets["GEMINI_API_KEY"]
+        genai.configure(api_key=API_KEY)
+
+        # Define function that Gemini can call
+        predict_range_tool = FunctionDeclaration(
+            name="predict_ev_range",
+            description="Predicts EV range and SoC given conditions like speed, temperature, terrain, etc.",
+            parameters={
+                "type": "OBJECT",
+                "properties": {
+                    "speed_kmh": {"type": "NUMBER", "description": "Vehicle speed in km/h"},
+                    "temperature_c": {"type": "NUMBER", "description": "Ambient temperature in Celsius"},
+                    "terrain": {"type": "STRING", "description": "Terrain type: Flat or Hilly"},
+                    "weather": {"type": "STRING", "description": "Weather condition: Normal, Hot, Cold, Rainy"},
+                    "soc": {"type": "NUMBER", "description": "Current battery state of charge (%)"},
+                },
+                "required": []
+            }
+        )
+
+        genai_model = genai.GenerativeModel(
+            model_name="models/gemini-pro-latest",
+            tools=[predict_range_tool],
+            generation_config=GenerationConfig(temperature=0.1)
+        )
+        return genai_model
+    except Exception as e:
+        st.error(f"Error loading Gemini API: {e}")
+        return None
+
+genai_model = load_genai_model()
+
+# --- Chat Session ---
+@st.cache_resource
+def start_chat_session(_genai_model):
+    return _genai_model.start_chat(enable_automatic_function_calling=False)
+
+if genai_model:
+    chat = start_chat_session(genai_model)
+else:
+    chat = None
+
 # --- CSS Styling ---
 st.markdown("""
 <style>
     .main { background-color: #FFFFFF; color: #111827; font-family: 'Inter', sans-serif; }
-    .hero { text-align: center; background: linear-gradient(90deg, #E0F2FE, #F8FAFC); padding: 35px 15px; border-radius: 12px; margin-bottom: 40px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-    .hero-title { font-size: 42px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px; margin-bottom: 10px; }
-    .hero-subtitle { font-size: 16px; color: #475569; font-weight: 400; max-width: 650px; margin: 0 auto; }
+    .hero { text-align: center; background: linear-gradient(90deg, #E0F2FE, #F8FAFC);
+            padding: 35px 15px; border-radius: 12px; margin-bottom: 40px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .hero-title { font-size: 42px; font-weight: 800; color: #0F172A; margin-bottom: 10px; }
+    .hero-subtitle { font-size: 16px; color: #475569; max-width: 650px; margin: 0 auto; }
     .section-title { font-size: 18px; font-weight: 600; color: #1E293B; margin-top: 10px; margin-bottom: 10px; }
-    .stButton>button { background-color: #2563EB; color: #FFFFFF; border-radius: 6px; font-weight: 600; border: none; padding: 0.6rem 1.4rem; transition: background 0.2s ease, transform 0.15s ease; }
+    .stButton>button { background-color: #2563EB; color: #FFFFFF; border-radius: 6px; font-weight: 600;
+                       border: none; padding: 0.6rem 1.4rem; transition: background 0.2s ease, transform 0.15s ease; }
     .stButton>button:hover { background-color: #1E40AF; transform: scale(1.02); }
     .footer { text-align: center; font-size: 12px; margin-top: 50px; color: #6B7280; }
-    .chat-container { border: 1px solid #E5E7EB; border-radius: 10px; padding: 15px; background-color: #F9FAFB; margin-top: 25px; }
-    .user-msg { background-color: #2563EB; color: white; padding: 8px 12px; border-radius: 10px; margin-bottom: 5px; max-width: 80%; margin-left: auto; }
-    .bot-msg { background-color: #E5E7EB; color: #111827; padding: 8px 12px; border-radius: 10px; margin-bottom: 5px; max-width: 80%; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -73,7 +121,6 @@ with col1:
 # CENTER PANEL – Prediction Form
 with col2:
     st.markdown("<div class='section-title'>🧩 Input Parameters</div>", unsafe_allow_html=True)
-
     c1, c2 = st.columns(2)
     with c1:
         SoC = st.number_input("State of Charge (%)", 0.0, 100.0, 80.0)
@@ -86,7 +133,6 @@ with col2:
         Weather = st.selectbox("Weather Condition", ["Normal", "Hot", "Cold", "Rainy"])
         Prev_SoC = st.number_input("Previous SoC (%)", 0.0, 100.0, 85.0)
 
-    st.markdown("<br>", unsafe_allow_html=True)
     predict_btn = st.button("🚀 Predict Range")
 
     if predict_btn:
@@ -107,14 +153,10 @@ with col2:
 
             def energy_rate(speed, terrain, weather):
                 rate = 0.15
-                if speed <= 50:
-                    rate = 0.12
-                elif speed > 80:
-                    rate = 0.18
-                if terrain == "Hilly":
-                    rate *= 1.2
-                if weather == "Hot":
-                    rate *= 1.1
+                if speed <= 50: rate = 0.12
+                elif speed > 80: rate = 0.18
+                if terrain == "Hilly": rate *= 1.2
+                if weather == "Hot": rate *= 1.1
                 return rate
 
             rate = energy_rate(Speed, Terrain, Weather)
@@ -145,43 +187,55 @@ with col3:
     - **Avg User Range:** 412 km  
     """)
 
-# --- Chatbot Section (Gemini) ---
+# --- Divider ---
+st.divider()
+
+# --- CHATBOT SECTION ---
 st.markdown("<div class='section-title'>🤖 EV Chat Assistant</div>", unsafe_allow_html=True)
-st.markdown("<p style='color:#475569;'>Ask any question about electric vehicles or driving efficiency.</p>", unsafe_allow_html=True)
+st.info("Ask questions like 'What’s my range at 100 km/h in hot weather on hilly roads?'")
 
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+if "chat_messages" not in st.session_state:
+    st.session_state.chat_messages = []
 
-# Display chat
-with st.container():
-    st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
-    for chat in st.session_state.chat_history:
-        if chat["role"] == "user":
-            st.markdown(f"<div class='user-msg'>{chat['content']}</div>", unsafe_allow_html=True)
+for msg in st.session_state.chat_messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+if prompt := st.chat_input("Ask me about EVs, battery, or range predictions..."):
+    st.session_state.chat_messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.spinner("Thinking..."):
+        if not genai_model:
+            ai_text = "Sorry, the chatbot connection failed. Please check your Gemini API key."
         else:
-            st.markdown(f"<div class='bot-msg'>{chat['content']}</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+            response = chat.send_message(prompt)
+            part = response.candidates[0].content.parts[0]
 
-user_input = st.text_input("Type your question:", placeholder="e.g., How can I extend my EV battery life?")
+            if part.function_call and part.function_call.name == "predict_ev_range":
+                args = part.function_call.args
+                speed = args.get("speed_kmh", 60)
+                temp = args.get("temperature_c", 25)
+                terrain = args.get("terrain", "Flat")
+                weather = args.get("weather", "Normal")
+                soc = args.get("soc", 80)
 
-if user_input:
-    st.session_state.chat_history.append({"role": "user", "content": user_input})
+                rate = 0.15
+                if speed <= 50: rate = 0.12
+                elif speed > 80: rate = 0.18
+                if terrain == "Hilly": rate *= 1.2
+                if weather == "Hot": rate *= 1.1
 
-    try:
-        # ✅ Configure Gemini API key from Streamlit secrets
-        genai.configure(api_key=st.secrets["gemini"]["api_key"])
-        model_gemini = genai.GenerativeModel("gemini-pro")
+                remaining_energy_kwh = (soc / 100) * 40
+                range_km = remaining_energy_kwh / rate
+                ai_text = f"At {speed} km/h in {weather.lower()} {terrain.lower()} conditions, your estimated range is **{range_km:.1f} km**."
+            else:
+                ai_text = part.text or "I’m not sure, but let’s try adjusting your inputs."
 
-        response = model_gemini.generate_content(
-            f"You are an expert EV assistant. Answer this user question clearly: {user_input}"
-        )
-        bot_reply = response.text
+    with st.chat_message("assistant"):
+        st.markdown(ai_text)
+    st.session_state.chat_messages.append({"role": "assistant", "content": ai_text})
 
-    except Exception as e:
-        bot_reply = f"⚠️ Error: {e}"
-
-    st.session_state.chat_history.append({"role": "assistant", "content": bot_reply})
-    st.rerun()
-
-# --- Footer --- 
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit</div>", unsafe_allow_html=True)
+# --- Footer ---
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Gemini AI</div>", unsafe_allow_html=True)
