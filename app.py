@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 import time
 import random
-from google.ai import generativelanguage as glm
+import openai
 
 # --- PATCH sklearn _RemainderColsList ISSUE ---
 import sklearn.compose._column_transformer as ctf
@@ -11,12 +11,6 @@ if not hasattr(ctf, '_RemainderColsList'):
     class _RemainderColsList(list):
         pass
     ctf._RemainderColsList = _RemainderColsList
-
-# --- TRY IMPORT GEMINI CLIENT ---
-try:
-    from google.ai import gemini as gem
-except ImportError:
-    gem = None  # Gemini SDK not installed or available
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -52,65 +46,25 @@ def energy_rate(speed, terrain, weather, braking, acceleration):
     rate *= 1 + 0.05 * braking + 0.07 * acceleration
     return rate
 
-# --- SETUP GOOGLE AI STUDIO API CLIENT ---
-google_api_available = False
-google_client = None
-
-if "google_ai_studio" in st.secrets and "api_key" in st.secrets["google_ai_studio"]:
-    try:
-        google_client = glm.TextServiceClient(
-            client_options={"api_key": st.secrets["google_ai_studio"]["api_key"]}
-        )
-        google_api_available = True
-    except Exception as e:
-        st.warning(f"⚠️ Google AI Studio API client init error: {type(e).__name__} - {e}")
-else:
-    st.warning("⚠️ Google AI Studio API key not found in secrets. Chatbot disabled.")
-
-# --- SETUP GEMINI API CLIENT ---
+# --- SETUP GEMINI AI (OPENAI API) CLIENT ---
 gemini_api_available = False
-gemini_client = None
-
-if gem is not None and "gemini_ai" in st.secrets and "api_key" in st.secrets["gemini_ai"]:
-    try:
-        gemini_client = gem.GeminiClient(
-            client_options={"api_key": st.secrets["gemini_ai"]["api_key"]}
-        )
-        gemini_api_available = True
-    except Exception as e:
-        st.warning(f"⚠️ Gemini API client init error: {type(e).__name__} - {e}")
-elif gem is None:
-    st.warning("⚠️ Gemini SDK not installed or available. Gemini chatbot disabled.")
+if "gemini_api_key" in st.secrets:
+    openai.api_key = st.secrets["gemini_api_key"]
+    gemini_api_available = True
 else:
-    st.warning("⚠️ Gemini API key not found in secrets. Gemini chatbot disabled.")
+    st.warning("⚠️ Gemini AI API key not found in secrets. Gemini chatbot disabled.")
 
-# --- FUNCTION TO CALL GOOGLE AI STUDIO CHAT ---
-def google_ai_studio_chat(prompt_text, model_name="models/chat-bison-001"):
+def gemini_chat_completion(messages, model="gpt-4o-mini"):
     try:
-        request = glm.GenerateTextRequest(
-            model=model_name,
-            prompt=glm.TextPrompt(text=prompt_text),
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
             temperature=0.7,
-            max_output_tokens=300
+            max_tokens=300
         )
-        response = google_client.generate_text(request=request)
-        return response.candidates[0].output
+        return response.choices[0].message["content"]
     except Exception as e:
-        return f"⚠️ Google AI Studio API error: {type(e).__name__} - {e}"
-
-# --- FUNCTION TO CALL GEMINI CHAT ---
-def gemini_ai_chat(prompt_text, model_name="gemini-1.0-chat"):
-    try:
-        request = gem.GenerateTextRequest(
-            model=model_name,
-            prompt=gem.TextPrompt(text=prompt_text),
-            temperature=0.7,
-            max_output_tokens=300
-        )
-        response = gemini_client.generate_text(request=request)
-        return response.candidates[0].output
-    except Exception as e:
-        return f"⚠️ Gemini API error: {type(e).__name__} - {e}"
+        return f"⚠️ Gemini AI API error: {type(e).__name__} - {e}"
 
 # --- PAGE STYLING ---
 st.markdown("""
@@ -250,11 +204,10 @@ if prompt:
 
     with st.spinner("Thinking..."):
         if gemini_api_available:
-            ai_text = gemini_ai_chat(prompt)
-        elif google_api_available:
-            ai_text = google_ai_studio_chat(prompt)
+            # Pass full chat history for context to Gemini AI
+            ai_text = gemini_chat_completion(st.session_state.chat_messages)
         else:
-            ai_text = "⚠️ No AI chatbot configured. Please provide API keys."
+            ai_text = "⚠️ Gemini AI API key not configured. Chatbot unavailable."
 
     with st.chat_message("assistant"):
         st.markdown(ai_text)
@@ -263,4 +216,4 @@ if prompt:
     st.session_state.processing = False
 
 # --- FOOTER ---
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Google AI Studio + Gemini AI</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Gemini AI</div>", unsafe_allow_html=True)
