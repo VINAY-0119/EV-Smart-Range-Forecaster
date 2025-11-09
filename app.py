@@ -26,17 +26,35 @@ def load_model():
 model = load_model()
 
 # =========================================================
+# --- HELPER FUNCTION FOR ENERGY RATE ---
+# =========================================================
+def energy_rate(speed, terrain, weather, braking, acceleration):
+    rate = 0.15
+    if speed <= 50:
+        rate = 0.12
+    elif speed > 80:
+        rate = 0.18
+    if terrain == "Hilly":
+        rate *= 1.2
+    if weather == "Hot":
+        rate *= 1.1
+    if weather == "Cold":
+        rate *= 1.15
+    rate *= 1 + 0.05 * braking + 0.07 * acceleration
+    return rate
+
+# =========================================================
 # --- CONFIGURE GENERATIVE AI PRO MODEL ---
 # =========================================================
 @st.cache_resource
 def load_genai_model():
-    try:
-        if "GEMINI_API_KEY" not in st.secrets:
-            st.error("❌ Gemini API key missing in Streamlit secrets.")
-            return None
+    api_key = st.secrets.get("GEMINI_API_KEY", None)
+    if not api_key:
+        st.error("❌ Gemini API key is missing from Streamlit secrets. Please add it to secrets.toml.")
+        return None
 
-        API_KEY = st.secrets["GEMINI_API_KEY"]
-        genai.configure(api_key=API_KEY)
+    try:
+        genai.configure(api_key=api_key)
 
         predict_range_tool = FunctionDeclaration(
             name="predict_ev_range",
@@ -57,12 +75,11 @@ def load_genai_model():
         )
 
         genai_model = genai.GenerativeModel(
-            model_name="generative-ai-pro",  # Updated to Pro model
+            model_name="generative-ai-pro",
             tools=[predict_range_tool],
             generation_config=GenerationConfig(temperature=0.1)
         )
         return genai_model
-
     except Exception as e:
         st.error(f"Error initializing Gemini API: {type(e).__name__} - {e}")
         return None
@@ -70,10 +87,12 @@ def load_genai_model():
 genai_model = load_genai_model()
 
 @st.cache_resource
-def start_chat_session(_genai_model):
-    return _genai_model.start_chat(enable_automatic_function_calling=False)
+def start_chat_session(genai_model):
+    if genai_model:
+        return genai_model.start_chat(enable_automatic_function_calling=False)
+    return None
 
-chat = start_chat_session(genai_model) if genai_model else None
+chat = start_chat_session(genai_model)
 
 # =========================================================
 # --- PAGE STYLING ---
@@ -149,16 +168,6 @@ with col2:
 
     predict_btn = st.button("🚀 Predict Range")
 
-    def energy_rate(speed, terrain, weather, braking, acceleration):
-        rate = 0.15
-        if speed <= 50: rate = 0.12
-        elif speed > 80: rate = 0.18
-        if terrain == "Hilly": rate *= 1.2
-        if weather == "Hot": rate *= 1.1
-        if weather == "Cold": rate *= 1.15
-        rate *= 1 + 0.05 * braking + 0.07 * acceleration
-        return rate
-
     if predict_btn:
         input_data = pd.DataFrame([{
             "SoC": SoC,
@@ -175,7 +184,6 @@ with col2:
             time.sleep(1)
             try:
                 predicted_SoC = model.predict(input_data)[0]
-
                 rate = energy_rate(Speed, Terrain, Weather, Braking, Acceleration)
                 battery_capacity_kwh = 40
                 remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
@@ -222,7 +230,7 @@ for msg in st.session_state.chat_messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-prompt = st.chat_input("Ask me about EVs, range, or efficiency...", disabled=st.session_state.processing)
+prompt = st.chat_input("Ask me about EVs, range, or efficiency...", disabled=st.session_state.processing or genai_model is None)
 
 if prompt:
     st.session_state.processing = True
@@ -263,7 +271,6 @@ if prompt:
                     )
                 else:
                     ai_text = getattr(part, "text", "") or "I'm not certain. Could you specify speed, terrain, or temperature?"
-
             except Exception as e:
                 ai_text = f"⚠️ Error processing your question: {type(e).__name__} - {e}"
 
