@@ -5,6 +5,7 @@ import time
 import random
 import google.generativeai as genai
 from google.generativeai.types import GenerationConfig, FunctionDeclaration
+import sklearn  # Ensure sklearn is imported before loading the model
 
 # =========================================================
 # --- PAGE CONFIGURATION ---
@@ -21,40 +22,34 @@ st.set_page_config(
 # =========================================================
 @st.cache_resource
 def load_model():
-    return joblib.load("ev_range_predictor_reduced.pkl")
+    try:
+        # Make sure the model file path is correct relative to this script
+        model = joblib.load("ev_range_predictor_reduced.pkl")
+        return model
+    except FileNotFoundError:
+        st.error("❌ Model file not found. Please upload 'ev_range_predictor_reduced.pkl' in the app folder.")
+        return None
+    except AttributeError as e:
+        st.error(f"❌ Model loading error: {e}. This may be due to missing custom classes or version mismatch.")
+        return None
+    except Exception as e:
+        st.error(f"❌ Unexpected error loading model: {type(e).__name__} - {e}")
+        return None
 
 model = load_model()
-
-# =========================================================
-# --- HELPER FUNCTION FOR ENERGY RATE ---
-# =========================================================
-def energy_rate(speed, terrain, weather, braking, acceleration):
-    rate = 0.15
-    if speed <= 50:
-        rate = 0.12
-    elif speed > 80:
-        rate = 0.18
-    if terrain == "Hilly":
-        rate *= 1.2
-    if weather == "Hot":
-        rate *= 1.1
-    if weather == "Cold":
-        rate *= 1.15
-    rate *= 1 + 0.05 * braking + 0.07 * acceleration
-    return rate
 
 # =========================================================
 # --- CONFIGURE GENERATIVE AI PRO MODEL ---
 # =========================================================
 @st.cache_resource
 def load_genai_model():
-    api_key = st.secrets.get("GEMINI_API_KEY", None)
-    if not api_key:
-        st.error("❌ Gemini API key is missing from Streamlit secrets. Please add it to secrets.toml.")
-        return None
-
     try:
-        genai.configure(api_key=api_key)
+        if "GEMINI_API_KEY" not in st.secrets:
+            st.error("❌ Gemini API key missing in Streamlit secrets.")
+            return None
+
+        API_KEY = st.secrets["GEMINI_API_KEY"]
+        genai.configure(api_key=API_KEY)
 
         predict_range_tool = FunctionDeclaration(
             name="predict_ev_range",
@@ -80,6 +75,7 @@ def load_genai_model():
             generation_config=GenerationConfig(temperature=0.1)
         )
         return genai_model
+
     except Exception as e:
         st.error(f"Error initializing Gemini API: {type(e).__name__} - {e}")
         return None
@@ -87,10 +83,8 @@ def load_genai_model():
 genai_model = load_genai_model()
 
 @st.cache_resource
-def start_chat_session(genai_model):
-    if genai_model:
-        return genai_model.start_chat(enable_automatic_function_calling=False)
-    return None
+def start_chat_session(_genai_model):
+    return _genai_model.start_chat(enable_automatic_function_calling=False) if _genai_model else None
 
 chat = start_chat_session(genai_model)
 
@@ -168,41 +162,55 @@ with col2:
 
     predict_btn = st.button("🚀 Predict Range")
 
+    def energy_rate(speed, terrain, weather, braking, acceleration):
+        rate = 0.15
+        if speed <= 50: rate = 0.12
+        elif speed > 80: rate = 0.18
+        if terrain == "Hilly": rate *= 1.2
+        if weather == "Hot": rate *= 1.1
+        if weather == "Cold": rate *= 1.15
+        rate *= 1 + 0.05 * braking + 0.07 * acceleration
+        return rate
+
     if predict_btn:
-        input_data = pd.DataFrame([{
-            "SoC": SoC,
-            "Speed (Km/h)": Speed,
-            "Temperature": Temperature,
-            "Terrain": Terrain,
-            "Braking (m/s²)": Braking,
-            "Acceleration (m/s²)": Acceleration,
-            "Weather": Weather,
-            "Prev_SoC": Prev_SoC
-        }])
+        if model is None:
+            st.error("Model not loaded. Cannot predict.")
+        else:
+            input_data = pd.DataFrame([{
+                "SoC": SoC,
+                "Speed (Km/h)": Speed,
+                "Temperature": Temperature,
+                "Terrain": Terrain,
+                "Braking (m/s²)": Braking,
+                "Acceleration (m/s²)": Acceleration,
+                "Weather": Weather,
+                "Prev_SoC": Prev_SoC
+            }])
 
-        with st.spinner("Calculating optimal range..."):
-            time.sleep(1)
-            try:
-                predicted_SoC = model.predict(input_data)[0]
-                rate = energy_rate(Speed, Terrain, Weather, Braking, Acceleration)
-                battery_capacity_kwh = 40
-                remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
-                predicted_range_km = remaining_energy_kwh / rate
+            with st.spinner("Calculating optimal range..."):
+                time.sleep(1)
+                try:
+                    predicted_SoC = model.predict(input_data)[0]
 
-                st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
-                colA, colB = st.columns(2)
-                with colA:
-                    st.metric("Predicted SoC (%)", f"{predicted_SoC:.2f}")
-                with colB:
-                    st.metric("Estimated Range (km)", f"{predicted_range_km:.1f}")
+                    rate = energy_rate(Speed, Terrain, Weather, Braking, Acceleration)
+                    battery_capacity_kwh = 40
+                    remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
+                    predicted_range_km = remaining_energy_kwh / rate
 
-                st.markdown(f"""
-                **Remaining Battery Energy:** {remaining_energy_kwh:.2f} kWh  
-                **Energy Consumption Rate:** {rate:.3f} kWh/km
-                """)
-                st.success("✅ Prediction complete! Check metrics above.")
-            except Exception as e:
-                st.error(f"Error during prediction: {type(e).__name__} - {e}")
+                    st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
+                    colA, colB = st.columns(2)
+                    with colA:
+                        st.metric("Predicted SoC (%)", f"{predicted_SoC:.2f}")
+                    with colB:
+                        st.metric("Estimated Range (km)", f"{predicted_range_km:.1f}")
+
+                    st.markdown(f"""
+                    **Remaining Battery Energy:** {remaining_energy_kwh:.2f} kWh  
+                    **Energy Consumption Rate:** {rate:.3f} kWh/km
+                    """)
+                    st.success("✅ Prediction complete! Check metrics above.")
+                except Exception as e:
+                    st.error(f"Error during prediction: {type(e).__name__} - {e}")
 
 with col3:
     st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
@@ -230,7 +238,7 @@ for msg in st.session_state.chat_messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-prompt = st.chat_input("Ask me about EVs, range, or efficiency...", disabled=st.session_state.processing or genai_model is None)
+prompt = st.chat_input("Ask me about EVs, range, or efficiency...", disabled=st.session_state.processing)
 
 if prompt:
     st.session_state.processing = True
@@ -271,6 +279,7 @@ if prompt:
                     )
                 else:
                     ai_text = getattr(part, "text", "") or "I'm not certain. Could you specify speed, terrain, or temperature?"
+
             except Exception as e:
                 ai_text = f"⚠️ Error processing your question: {type(e).__name__} - {e}"
 
