@@ -1,8 +1,4 @@
 streamlit
-pandas
-scikit-learn==1.6.1
+openai
 joblib
-plotly
-numpy
-openrouteservice
-streamlit-autorefresh
+pandas
