@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 import time
 import random
-import openai
+import google.generativeai as genai
 
 # --- App Configuration ---
 st.set_page_config(
@@ -145,14 +145,14 @@ with col3:
     - **Avg User Range:** 412 km  
     """)
 
-# --- Chatbot Section ---
+# --- Chatbot Section (Gemini) ---
 st.markdown("<div class='section-title'>🤖 EV Chat Assistant</div>", unsafe_allow_html=True)
 st.markdown("<p style='color:#475569;'>Ask any question about electric vehicles or driving efficiency.</p>", unsafe_allow_html=True)
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# --- Chat Display ---
+# Display chat
 with st.container():
     st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
     for chat in st.session_state.chat_history:
@@ -168,18 +168,14 @@ if user_input:
     st.session_state.chat_history.append({"role": "user", "content": user_input})
 
     try:
-        # --- Load API key from Streamlit secrets ---
-        openai.api_key = st.secrets["openai"]["api_key"]
+        # ✅ Configure Gemini API key from Streamlit secrets
+        genai.configure(api_key=st.secrets["gemini"]["api_key"])
+        model_gemini = genai.GenerativeModel("gemini-pro")
 
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are an expert EV assistant helping users with electric vehicle insights."},
-                *st.session_state.chat_history
-            ]
+        response = model_gemini.generate_content(
+            f"You are an expert EV assistant. Answer this user question clearly: {user_input}"
         )
-
-        bot_reply = response["choices"][0]["message"]["content"]
+        bot_reply = response.text
 
     except Exception as e:
         bot_reply = f"⚠️ Error: {e}"
@@ -189,4 +185,3 @@ if user_input:
 
 # --- Footer --- 
 st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit</div>", unsafe_allow_html=True)
-
