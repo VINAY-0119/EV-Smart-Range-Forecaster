@@ -57,24 +57,25 @@ def energy_rate(speed, terrain, weather, braking, acceleration):
     return rate
 
 # ================================
-# --- SETUP GEMINI AI (OpenAI-compatible API) ---
+# --- SETUP OPENAI API KEY ---
 # ================================
-def setup_gemini_ai():
-    if "GOOGLE_API_KEY" in st.secrets:
-        openai.api_key = st.secrets["GOOGLE_API_KEY"]
+def setup_openai():
+    if "OPENAI_API_KEY" in st.secrets:
+        openai.api_key = st.secrets["OPENAI_API_KEY"]
         return True
     else:
-        st.warning("⚠️ API key not found in secrets. Chatbot disabled.")
+        st.warning("⚠️ OpenAI API key not found in secrets. Chatbot disabled.")
         return False
 
-google_api_available = setup_gemini_ai()
+openai_api_available = setup_openai()
 
-def gemini_chat_response(prompt):
+def openai_chat_response(prompt):
     try:
         response = openai.ChatCompletion.create(
-            model="gemini-2.5-turbo",  # Replace with your actual Gemini model name
+            model="gpt-4",  # or "gpt-3.5-turbo"
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
+            max_tokens=500
         )
         return response.choices[0].message['content'].strip()
     except Exception as e:
@@ -232,9 +233,9 @@ if prompt:
     with st.spinner("Thinking..."):
         ai_text = "⚠️ API key not found or error."
 
-        if google_api_available:
+        if openai_api_available:
             try:
-                ai_text = gemini_chat_response(prompt)
+                ai_text = openai_chat_response(prompt)
             except Exception as e:
                 ai_text = f"⚠️ API error: {type(e).__name__} - {e}"
 
@@ -247,4 +248,4 @@ if prompt:
 # ================================
 # --- FOOTER ---
 # ================================
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Gemini AI</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI GPT</div>", unsafe_allow_html=True)
