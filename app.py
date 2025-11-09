@@ -204,13 +204,16 @@ if prompt:
         st.markdown(prompt)
 
     with st.spinner("Thinking..."):
-        ai_text = gemini_chat_completion(st.session_state.chat_messages)
+        ai_response = gemini_chat_completion(st.session_state.chat_messages)
 
     with st.chat_message("assistant"):
-        st.markdown(ai_text)
+        st.markdown(ai_response)
 
-    st.session_state.chat_messages.append({"role": "assistant", "content": ai_text})
+    st.session_state.chat_messages.append({"role": "assistant", "content": ai_response})
     st.session_state.processing = False
+
+if st.button("Clear Chat"):
+    st.session_state.chat_messages = []
 
 # --- FOOTER ---
 st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Gemini 2.5 Flash</div>", unsafe_allow_html=True)
