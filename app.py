@@ -20,17 +20,20 @@ def load_model():
 
 model = load_model()
 
-# --- Load API Key from Streamlit Secrets ---
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# --- Initialize OpenAI Client ---
+client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
-# --- CSS Styling ---
+# --- Modern CSS ---
 st.markdown("""
 <style>
+    /* Global */
     .main {
         background-color: #FFFFFF;
         color: #111827;
         font-family: 'Inter', sans-serif;
     }
+
+    /* Hero Header */
     .hero {
         text-align: center;
         background: linear-gradient(90deg, #E0F2FE, #F8FAFC);
@@ -39,6 +42,7 @@ st.markdown("""
         margin-bottom: 40px;
         box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
+
     .hero-title {
         font-size: 42px;
         font-weight: 800;
@@ -46,6 +50,7 @@ st.markdown("""
         letter-spacing: 0.5px;
         margin-bottom: 10px;
     }
+
     .hero-subtitle {
         font-size: 16px;
         color: #475569;
@@ -53,6 +58,8 @@ st.markdown("""
         max-width: 650px;
         margin: 0 auto;
     }
+
+    /* Section Titles */
     .section-title {
         font-size: 18px;
         font-weight: 600;
@@ -60,6 +67,8 @@ st.markdown("""
         margin-top: 10px;
         margin-bottom: 10px;
     }
+
+    /* Button */
     .stButton>button {
         background-color: #2563EB;
         color: #FFFFFF;
@@ -69,15 +78,24 @@ st.markdown("""
         padding: 0.6rem 1.4rem;
         transition: background 0.2s ease, transform 0.15s ease;
     }
+
     .stButton>button:hover {
         background-color: #1E40AF;
         transform: scale(1.02);
     }
+
+    /* Footer */
     .footer {
         text-align: center;
         font-size: 12px;
         margin-top: 50px;
         color: #6B7280;
+    }
+
+    /* Chat styling */
+    .stChatMessage {
+        border-radius: 10px;
+        margin-bottom: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -192,34 +210,41 @@ with col3:
     - **Avg User Range:** 412 km  
     """)
 
-    st.markdown("<div class='section-title'>💬 Ask EV Chatbot</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>💬 Ask EV Assistant</div>", unsafe_allow_html=True)
 
+    # Chat session state
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    for message in st.session_state.chat_history:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    # Display chat messages
+    for msg in st.session_state.chat_history:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
-    if prompt := st.chat_input("Ask me anything about EVs, range, or battery life..."):
-        st.session_state.chat_history.append({"role": "user", "content": prompt})
-
+    # User input
+    user_input = st.chat_input("Ask me anything about EV performance or range...")
+    if user_input:
+        st.session_state.chat_history.append({"role": "user", "content": user_input})
         with st.chat_message("user"):
-            st.markdown(prompt)
+            st.markdown(user_input)
 
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": "You are a helpful EV expert who answers clearly and concisely."},
-                        *st.session_state.chat_history
-                    ]
-                )
-                answer = response.choices[0].message.content
-                st.markdown(answer)
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[
+                            {"role": "system", "content": "You are an expert EV assistant. Keep answers concise, clear, and helpful."},
+                            *st.session_state.chat_history
+                        ],
+                        max_tokens=300,
+                    )
+                    reply = response.choices[0].message.content
+                except Exception as e:
+                    reply = f"⚠️ Error: {e}"
 
-        st.session_state.chat_history.append({"role": "assistant", "content": answer})
+                st.markdown(reply)
+                st.session_state.chat_history.append({"role": "assistant", "content": reply})
 
-# --- Footer ---
+# --- Footer --- 
 st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit</div>", unsafe_allow_html=True)
