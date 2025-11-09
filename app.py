@@ -44,15 +44,17 @@ def load_genai_model():
             name="predict_ev_range",
             description="Predicts EV range and SoC given driving and weather conditions.",
             parameters={
-                "type": "OBJECT",
+                "type": "object",
                 "properties": {
-                    "speed_kmh": {"type": "NUMBER", "description": "Vehicle speed in km/h"},
-                    "temperature_c": {"type": "NUMBER", "description": "Ambient temperature in Celsius"},
-                    "terrain": {"type": "STRING", "description": "Terrain type: Flat or Hilly"},
-                    "weather": {"type": "STRING", "description": "Weather condition: Normal, Hot, Cold, Rainy"},
-                    "soc": {"type": "NUMBER", "description": "Current battery state of charge (%)"},
+                    "speed_kmh": {"type": "number", "description": "Vehicle speed in km/h"},
+                    "temperature_c": {"type": "number", "description": "Ambient temperature in Celsius"},
+                    "terrain": {"type": "string", "description": "Terrain type: Flat or Hilly"},
+                    "weather": {"type": "string", "description": "Weather condition: Normal, Hot, Cold, Rainy"},
+                    "soc": {"type": "number", "description": "Current battery state of charge (%)"},
+                    "braking": {"type": "number", "description": "Braking (m/s²)"},
+                    "acceleration": {"type": "number", "description": "Acceleration (m/s²)"},
                 },
-                "required": []
+                "required": ["speed_kmh", "temperature_c", "terrain", "weather", "soc"]
             }
         )
 
@@ -143,17 +145,28 @@ with col2:
     st.markdown("<div class='section-title'>🧩 Input Parameters</div>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
-        SoC = st.number_input("State of Charge (%)", 0.0, 100.0, 80.0)
-        Speed = st.number_input("Speed (Km/h)", 0.0, 200.0, 60.0)
-        Temperature = st.number_input("Temperature (°C)", -20.0, 60.0, 25.0)
+        SoC = st.number_input("State of Charge (%)", 0.0, 100.0, 80.0, step=1.0, format="%.1f")
+        Speed = st.number_input("Speed (Km/h)", 0.0, 200.0, 60.0, step=1.0, format="%.1f")
+        Temperature = st.number_input("Temperature (°C)", -20.0, 60.0, 25.0, step=0.1, format="%.1f")
         Terrain = st.selectbox("Terrain Type", ["Flat", "Hilly"])
     with c2:
-        Braking = st.number_input("Braking (m/s²)", 0.0, 10.0, 0.5)
-        Acceleration = st.number_input("Acceleration (m/s²)", 0.0, 10.0, 1.0)
+        Braking = st.number_input("Braking (m/s²)", 0.0, 10.0, 0.5, step=0.1, format="%.2f")
+        Acceleration = st.number_input("Acceleration (m/s²)", 0.0, 10.0, 1.0, step=0.1, format="%.2f")
         Weather = st.selectbox("Weather Condition", ["Normal", "Hot", "Cold", "Rainy"])
-        Prev_SoC = st.number_input("Previous SoC (%)", 0.0, 100.0, 85.0)
+        Prev_SoC = st.number_input("Previous SoC (%)", 0.0, 100.0, 85.0, step=1.0, format="%.1f")
 
     predict_btn = st.button("🚀 Predict Range")
+
+    def energy_rate(speed, terrain, weather, braking, acceleration):
+        rate = 0.15
+        if speed <= 50: rate = 0.12
+        elif speed > 80: rate = 0.18
+        if terrain == "Hilly": rate *= 1.2
+        if weather == "Hot": rate *= 1.1
+        if weather == "Cold": rate *= 1.15
+        # Adjust rate for braking and acceleration impact
+        rate *= 1 + 0.05 * braking + 0.07 * acceleration
+        return rate
 
     if predict_btn:
         input_data = pd.DataFrame([{
@@ -169,34 +182,28 @@ with col2:
 
         with st.spinner("Calculating optimal range..."):
             time.sleep(1)
-            predicted_SoC = model.predict(input_data)[0]
+            try:
+                predicted_SoC = model.predict(input_data)[0]
 
-            def energy_rate(speed, terrain, weather):
-                rate = 0.15
-                if speed <= 50: rate = 0.12
-                elif speed > 80: rate = 0.18
-                if terrain == "Hilly": rate *= 1.2
-                if weather == "Hot": rate *= 1.1
-                if weather == "Cold": rate *= 1.15
-                return rate
+                rate = energy_rate(Speed, Terrain, Weather, Braking, Acceleration)
+                battery_capacity_kwh = 40  # Assuming 40 kWh battery capacity for calculation
+                remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
+                predicted_range_km = remaining_energy_kwh / rate
 
-            rate = energy_rate(Speed, Terrain, Weather)
-            battery_capacity_kwh = 40
-            remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
-            predicted_range_km = remaining_energy_kwh / rate
+                st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
+                colA, colB = st.columns(2)
+                with colA:
+                    st.metric("Predicted SoC (%)", f"{predicted_SoC:.2f}")
+                with colB:
+                    st.metric("Estimated Range (km)", f"{predicted_range_km:.1f}")
 
-        st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
-        colA, colB = st.columns(2)
-        with colA:
-            st.metric("Predicted SoC (%)", f"{predicted_SoC:.2f}")
-        with colB:
-            st.metric("Estimated Range (km)", f"{predicted_range_km:.1f}")
-
-        st.markdown(f"""
-        **Remaining Battery Energy:** {remaining_energy_kwh:.2f} kWh  
-        **Energy Consumption Rate:** {rate:.3f} kWh/km
-        """)
-        st.success("✅ Prediction complete! Check metrics above.")
+                st.markdown(f"""
+                **Remaining Battery Energy:** {remaining_energy_kwh:.2f} kWh  
+                **Energy Consumption Rate:** {rate:.3f} kWh/km
+                """)
+                st.success("✅ Prediction complete! Check metrics above.")
+            except Exception as e:
+                st.error(f"Error during prediction: {type(e).__name__} - {e}")
 
 # ---------------- RIGHT PANEL ----------------
 with col3:
@@ -246,20 +253,18 @@ if prompt:
                 # Function call case
                 if hasattr(part, "function_call") and part.function_call.name == "predict_ev_range":
                     args = part.function_call.args or {}
+
                     speed = float(args.get("speed_kmh", 60))
                     temp = float(args.get("temperature_c", 25))
                     terrain = args.get("terrain", "Flat")
                     weather = args.get("weather", "Normal")
                     soc = float(args.get("soc", 80))
+                    braking = float(args.get("braking", 0.5))
+                    acceleration = float(args.get("acceleration", 1.0))
 
-                    rate = 0.15
-                    if speed <= 50: rate = 0.12
-                    elif speed > 80: rate = 0.18
-                    if terrain.lower() == "hilly": rate *= 1.2
-                    if weather.lower() == "hot": rate *= 1.1
-                    elif weather.lower() == "cold": rate *= 1.15
-
-                    remaining_energy_kwh = (soc / 100) * 40
+                    rate = energy_rate(speed, terrain, weather, braking, acceleration)
+                    battery_capacity_kwh = 40
+                    remaining_energy_kwh = (soc / 100) * battery_capacity_kwh
                     range_km = remaining_energy_kwh / rate
 
                     ai_text = (
@@ -278,7 +283,6 @@ if prompt:
 
     st.session_state.chat_messages.append({"role": "assistant", "content": ai_text})
     st.session_state.processing = False
-    # Removed st.experimental_rerun()
 
 # =========================================================
 # --- FOOTER ---
