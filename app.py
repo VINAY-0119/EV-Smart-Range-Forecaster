@@ -23,7 +23,6 @@ st.set_page_config(
 @st.cache_resource
 def load_model():
     try:
-        # Make sure the model file path is correct relative to this script
         model = joblib.load("ev_range_predictor_reduced.pkl")
         return model
     except FileNotFoundError:
@@ -39,7 +38,7 @@ def load_model():
 model = load_model()
 
 # =========================================================
-# --- CONFIGURE GENERATIVE AI PRO MODEL ---
+# --- CONFIGURE GENERATIVE AI MODEL ---
 # =========================================================
 @st.cache_resource
 def load_genai_model():
@@ -50,6 +49,10 @@ def load_genai_model():
 
         API_KEY = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=API_KEY)
+
+        # Debug: List available models (comment out in production)
+        models = genai.list_models()
+        st.write("Available Generative AI Models:", [m.name for m in models])
 
         predict_range_tool = FunctionDeclaration(
             name="predict_ev_range",
@@ -70,7 +73,7 @@ def load_genai_model():
         )
 
         genai_model = genai.GenerativeModel(
-            model_name="generative-ai-pro",
+            model_name="chat-bison-001",  # Updated to a valid model name
             tools=[predict_range_tool],
             generation_config=GenerationConfig(temperature=0.1)
         )
@@ -222,7 +225,7 @@ with col3:
     """)
 
 # =========================================================
-# --- CHATBOT SECTION (Generative AI Pro) ---
+# --- CHATBOT SECTION (Generative AI) ---
 # =========================================================
 st.divider()
 st.markdown("<div class='section-title'>🤖 EV Chat Assistant</div>", unsafe_allow_html=True)
@@ -292,4 +295,4 @@ if prompt:
 # =========================================================
 # --- FOOTER ---
 # =========================================================
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Generative AI Pro</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Generative AI</div>", unsafe_allow_html=True)
