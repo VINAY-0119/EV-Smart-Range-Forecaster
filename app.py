@@ -30,7 +30,6 @@ model = load_model()
 # =========================================================
 @st.cache_resource
 def load_genai_model():
-    """Connect to Gemini API and configure EV chat model."""
     try:
         if "GEMINI_API_KEY" not in st.secrets:
             st.error("❌ Gemini API key missing in Streamlit secrets.")
@@ -39,7 +38,6 @@ def load_genai_model():
         API_KEY = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=API_KEY)
 
-        # Define function tool for EV range prediction
         predict_range_tool = FunctionDeclaration(
             name="predict_ev_range",
             description="Predicts EV range and SoC given driving and weather conditions.",
@@ -69,12 +67,8 @@ def load_genai_model():
         st.error(f"Error initializing Gemini API: {type(e).__name__} - {e}")
         return None
 
-# Initialize Gemini model
 genai_model = load_genai_model()
 
-# =========================================================
-# --- CHAT SESSION SETUP ---
-# =========================================================
 @st.cache_resource
 def start_chat_session(_genai_model):
     return _genai_model.start_chat(enable_automatic_function_calling=False)
@@ -120,7 +114,6 @@ st.markdown("""
 # =========================================================
 col1, col2, col3 = st.columns([1.2, 2.3, 1.2])
 
-# LEFT PANEL
 with col1:
     st.markdown("<div class='section-title'>⚙️ EV Insights</div>", unsafe_allow_html=True)
     st.markdown("""
@@ -140,7 +133,6 @@ with col1:
     ]
     st.markdown(f"✅ {random.choice(tips)}")
 
-# CENTER PANEL
 with col2:
     st.markdown("<div class='section-title'>🧩 Input Parameters</div>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
@@ -164,7 +156,6 @@ with col2:
         if terrain == "Hilly": rate *= 1.2
         if weather == "Hot": rate *= 1.1
         if weather == "Cold": rate *= 1.15
-        # Adjust rate for braking and acceleration impact
         rate *= 1 + 0.05 * braking + 0.07 * acceleration
         return rate
 
@@ -186,7 +177,7 @@ with col2:
                 predicted_SoC = model.predict(input_data)[0]
 
                 rate = energy_rate(Speed, Terrain, Weather, Braking, Acceleration)
-                battery_capacity_kwh = 40  # Assumed battery capacity
+                battery_capacity_kwh = 40
                 remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
                 predicted_range_km = remaining_energy_kwh / rate
 
@@ -205,7 +196,6 @@ with col2:
             except Exception as e:
                 st.error(f"Error during prediction: {type(e).__name__} - {e}")
 
-# RIGHT PANEL
 with col3:
     st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
     st.markdown("""
@@ -232,7 +222,6 @@ for msg in st.session_state.chat_messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Chat input
 prompt = st.chat_input("Ask me about EVs, range, or efficiency...", disabled=st.session_state.processing)
 
 if prompt:
@@ -250,7 +239,7 @@ if prompt:
                 response = chat.send_message(prompt)
                 part = response.candidates[0].content.parts[0]
 
-                # Check for function call from Gemini
+                # Function call handler
                 if hasattr(part, "function_call") and part.function_call.name == "predict_ev_range":
                     args = part.function_call.args or {}
 
