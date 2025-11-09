@@ -76,7 +76,7 @@ google_api_available = setup_google_palm()
 def gemini_chat_response(prompt):
     try:
         response = palm.chat(
-            model="models/chat-bison-001",  # This is a PaLM 2 chat model (adjust if needed)
+            model="models/chat-bison-001",  # PaLM 2 chat model
             messages=[{"author": "user", "content": prompt}],
             temperature=0.1,
         )
