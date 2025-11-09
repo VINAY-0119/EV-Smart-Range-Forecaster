@@ -3,13 +3,12 @@ import pandas as pd
 import joblib
 import time
 import random
-import google.generativeai as genai
-from google.generativeai.types import GenerationConfig, FunctionDeclaration
-import sklearn  # Ensure sklearn is imported before loading the model
+import openai
+import sklearn  # ensure sklearn is imported for model compatibility
 
-# =========================================================
+# ================================
 # --- PAGE CONFIGURATION ---
-# =========================================================
+# ================================
 st.set_page_config(
     page_title="EV Range Predictor",
     page_icon="🚗",
@@ -17,9 +16,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# =========================================================
+# ================================
 # --- LOAD ML MODEL ---
-# =========================================================
+# ================================
 @st.cache_resource
 def load_model():
     try:
@@ -28,72 +27,50 @@ def load_model():
     except FileNotFoundError:
         st.error("❌ Model file not found. Please upload 'ev_range_predictor_reduced.pkl' in the app folder.")
         return None
-    except AttributeError as e:
-        st.error(f"❌ Model loading error: {e}. This may be due to missing custom classes or version mismatch.")
-        return None
     except Exception as e:
-        st.error(f"❌ Unexpected error loading model: {type(e).__name__} - {e}")
+        st.error(f"❌ Error loading model: {type(e).__name__} - {e}")
         return None
 
 model = load_model()
 
-# =========================================================
-# --- CONFIGURE GENERATIVE AI MODEL ---
-# =========================================================
-@st.cache_resource
-def load_genai_model():
+# ================================
+# --- HELPER FUNCTIONS ---
+# ================================
+def energy_rate(speed, terrain, weather, braking, acceleration):
+    rate = 0.15
+    if speed <= 50: rate = 0.12
+    elif speed > 80: rate = 0.18
+    if terrain == "Hilly": rate *= 1.2
+    if weather == "Hot": rate *= 1.1
+    if weather == "Cold": rate *= 1.15
+    rate *= 1 + 0.05 * braking + 0.07 * acceleration
+    return rate
+
+# ================================
+# --- SETUP OPENAI API ---
+# ================================
+def setup_openai():
+    if "OPENAI_API_KEY" in st.secrets:
+        openai.api_key = st.secrets["OPENAI_API_KEY"]
+        return True
+    return False
+
+openai_available = setup_openai()
+
+def openai_chat_response(messages):
     try:
-        if "GEMINI_API_KEY" not in st.secrets:
-            st.error("❌ Gemini API key missing in Streamlit secrets.")
-            return None
-
-        API_KEY = st.secrets["GEMINI_API_KEY"]
-        genai.configure(api_key=API_KEY)
-
-        # Debug: List available models (comment out in production)
-        models = genai.list_models()
-        st.write("Available Generative AI Models:", [m.name for m in models])
-
-        predict_range_tool = FunctionDeclaration(
-            name="predict_ev_range",
-            description="Predicts EV range and SoC given driving and weather conditions.",
-            parameters={
-                "type": "object",
-                "properties": {
-                    "speed_kmh": {"type": "number", "description": "Vehicle speed in km/h"},
-                    "temperature_c": {"type": "number", "description": "Ambient temperature in Celsius"},
-                    "terrain": {"type": "string", "description": "Terrain type: Flat or Hilly"},
-                    "weather": {"type": "string", "description": "Weather condition: Normal, Hot, Cold, Rainy"},
-                    "soc": {"type": "number", "description": "Current battery state of charge (%)"},
-                    "braking": {"type": "number", "description": "Braking (m/s²)"},
-                    "acceleration": {"type": "number", "description": "Acceleration (m/s²)"},
-                },
-                "required": ["speed_kmh", "temperature_c", "terrain", "weather", "soc"]
-            }
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.1
         )
-
-        genai_model = genai.GenerativeModel(
-            model_name="chat-bison-001",  # Updated to a valid model name
-            tools=[predict_range_tool],
-            generation_config=GenerationConfig(temperature=0.1)
-        )
-        return genai_model
-
+        return response.choices[0].message.content
     except Exception as e:
-        st.error(f"Error initializing Gemini API: {type(e).__name__} - {e}")
-        return None
+        return f"⚠️ OpenAI API error: {type(e).__name__} - {e}"
 
-genai_model = load_genai_model()
-
-@st.cache_resource
-def start_chat_session(_genai_model):
-    return _genai_model.start_chat(enable_automatic_function_calling=False) if _genai_model else None
-
-chat = start_chat_session(genai_model)
-
-# =========================================================
+# ================================
 # --- PAGE STYLING ---
-# =========================================================
+# ================================
 st.markdown("""
 <style>
     .main { background-color: #FFFFFF; color: #111827; font-family: 'Inter', sans-serif; }
@@ -112,9 +89,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# =========================================================
+# ================================
 # --- HERO SECTION ---
-# =========================================================
+# ================================
 st.markdown("""
 <div class="hero">
     <div class="hero-title">⚡ EV Vehicle Range Predictor 🚗</div>
@@ -125,9 +102,9 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# =========================================================
+# ================================
 # --- MAIN LAYOUT ---
-# =========================================================
+# ================================
 col1, col2, col3 = st.columns([1.2, 2.3, 1.2])
 
 with col1:
@@ -164,16 +141,6 @@ with col2:
         Prev_SoC = st.number_input("Previous SoC (%)", 0.0, 100.0, 85.0, step=1.0, format="%.1f")
 
     predict_btn = st.button("🚀 Predict Range")
-
-    def energy_rate(speed, terrain, weather, braking, acceleration):
-        rate = 0.15
-        if speed <= 50: rate = 0.12
-        elif speed > 80: rate = 0.18
-        if terrain == "Hilly": rate *= 1.2
-        if weather == "Hot": rate *= 1.1
-        if weather == "Cold": rate *= 1.15
-        rate *= 1 + 0.05 * braking + 0.07 * acceleration
-        return rate
 
     if predict_btn:
         if model is None:
@@ -224,9 +191,9 @@ with col3:
     - **Avg User Range:** 412 km  
     """)
 
-# =========================================================
-# --- CHATBOT SECTION (Generative AI) ---
-# =========================================================
+# ================================
+# --- CHATBOT SECTION ---
+# ================================
 st.divider()
 st.markdown("<div class='section-title'>🤖 EV Chat Assistant</div>", unsafe_allow_html=True)
 st.info("Ask things like: 'What’s my range at 100 km/h in hot weather on hilly terrain?' or 'How does cold weather affect my EV?'")
@@ -251,40 +218,14 @@ if prompt:
         st.markdown(prompt)
 
     with st.spinner("Thinking..."):
-        if not genai_model or not chat:
-            ai_text = "❌ Gemini chatbot is not connected. Please check your API key."
-        else:
+        ai_text = "⚠️ OpenAI API key not found or error."
+
+        if openai_available:
             try:
-                response = chat.send_message(prompt)
-                part = response.candidates[0].content.parts[0]
-
-                # Function call handler
-                if hasattr(part, "function_call") and part.function_call.name == "predict_ev_range":
-                    args = part.function_call.args or {}
-
-                    speed = float(args.get("speed_kmh", 60))
-                    temp = float(args.get("temperature_c", 25))
-                    terrain = args.get("terrain", "Flat")
-                    weather = args.get("weather", "Normal")
-                    soc = float(args.get("soc", 80))
-                    braking = float(args.get("braking", 0.5))
-                    acceleration = float(args.get("acceleration", 1.0))
-
-                    rate = energy_rate(speed, terrain, weather, braking, acceleration)
-                    battery_capacity_kwh = 40
-                    remaining_energy_kwh = (soc / 100) * battery_capacity_kwh
-                    range_km = remaining_energy_kwh / rate
-
-                    ai_text = (
-                        f"At **{speed} km/h** in **{weather.lower()} {terrain.lower()}** conditions, "
-                        f"your estimated driving range is about **{range_km:.1f} km** "
-                        f"with {soc:.0f}% charge remaining."
-                    )
-                else:
-                    ai_text = getattr(part, "text", "") or "I'm not certain. Could you specify speed, terrain, or temperature?"
-
+                messages = [{"role": "user", "content": prompt}]
+                ai_text = openai_chat_response(messages)
             except Exception as e:
-                ai_text = f"⚠️ Error processing your question: {type(e).__name__} - {e}"
+                ai_text = f"⚠️ OpenAI API error: {type(e).__name__} - {e}"
 
     with st.chat_message("assistant"):
         st.markdown(ai_text)
@@ -292,7 +233,7 @@ if prompt:
     st.session_state.chat_messages.append({"role": "assistant", "content": ai_text})
     st.session_state.processing = False
 
-# =========================================================
+# ================================
 # --- FOOTER ---
-# =========================================================
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Generative AI</div>", unsafe_allow_html=True)
+# ================================
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI GPT-4</div>", unsafe_allow_html=True)
