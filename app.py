@@ -19,98 +19,29 @@ def load_model():
 
 model = load_model()
 
-# --- Professional Modern CSS (Clean Layout + Floating Chat) ---
+# --- Modern Styling ---
 st.markdown("""
 <style>
-    /* Global */
-    .main {
-        background-color: #FFFFFF;
-        color: #111827;
-        font-family: 'Inter', sans-serif;
-    }
-
-    /* Hero Header */
-    .hero {
-        text-align: center;
-        background: linear-gradient(90deg, #E0F2FE, #F8FAFC);
-        padding: 35px 15px;
-        border-radius: 12px;
-        margin-bottom: 40px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
-
-    .hero-title {
-        font-size: 42px;
-        font-weight: 800;
-        color: #0F172A;
-        letter-spacing: 0.5px;
-        margin-bottom: 10px;
-    }
-
-    .hero-subtitle {
-        font-size: 16px;
-        color: #475569;
-        font-weight: 400;
-        max-width: 650px;
-        margin: 0 auto;
-    }
-
-    /* Section Titles */
-    .section-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: #1E293B;
-        margin-top: 10px;
-        margin-bottom: 10px;
-    }
-
-    /* Button */
-    .stButton>button {
-        background-color: #2563EB;
-        color: #FFFFFF;
-        border-radius: 6px;
-        font-weight: 600;
-        border: none;
-        padding: 0.6rem 1.4rem;
-        transition: background 0.2s ease, transform 0.15s ease;
-    }
-
-    .stButton>button:hover {
-        background-color: #1E40AF;
-        transform: scale(1.02);
-    }
-
-    /* Footer */
-    .footer {
-        text-align: center;
-        font-size: 12px;
-        margin-top: 50px;
-        color: #6B7280;
-    }
-
+    .main {background-color:#FFFFFF;color:#111827;font-family:'Inter',sans-serif;}
+    .hero {text-align:center;background:linear-gradient(90deg,#E0F2FE,#F8FAFC);
+        padding:35px 15px;border-radius:12px;margin-bottom:40px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.08);}
+    .hero-title {font-size:42px;font-weight:800;color:#0F172A;margin-bottom:10px;}
+    .hero-subtitle {font-size:16px;color:#475569;max-width:650px;margin:0 auto;}
+    .section-title {font-size:18px;font-weight:600;color:#1E293B;margin-top:10px;margin-bottom:10px;}
+    .stButton>button {background-color:#2563EB;color:#fff;border-radius:6px;
+        font-weight:600;border:none;padding:0.6rem 1.4rem;transition:0.2s;}
+    .stButton>button:hover {background-color:#1E40AF;transform:scale(1.02);}
+    .footer {text-align:center;font-size:12px;margin-top:50px;color:#6B7280;}
     /* Floating Chatbox */
     div[data-testid="stChatInput"] {
-        position: fixed;
-        bottom: 20px;
-        right: 25px;
-        width: 340px !important;
-        z-index: 100;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-        border-radius: 10px;
-        background-color: #FFFFFF;
-    }
-
+        position:fixed;bottom:20px;right:25px;width:340px!important;
+        z-index:100;box-shadow:0 3px 8px rgba(0,0,0,0.1);
+        border-radius:10px;background-color:#FFFFFF;}
     [data-testid="stChatMessageContainer"] {
-        max-width: 360px;
-        position: fixed;
-        bottom: 80px;
-        right: 25px;
-        z-index: 99;
-        background: #F9FAFB;
-        border-radius: 12px;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.08);
-        padding: 8px;
-    }
+        max-width:360px;position:fixed;bottom:80px;right:25px;z-index:99;
+        background:#F9FAFB;border-radius:12px;box-shadow:0 3px 8px rgba(0,0,0,0.08);
+        padding:8px;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -149,7 +80,7 @@ with col1:
     ]
     st.markdown(f"✅ {random.choice(tips)}")
 
-# CENTER PANEL – Main Prediction Form
+# CENTER PANEL – Prediction Form
 with col2:
     st.markdown("<div class='section-title'>🧩 Input Parameters</div>", unsafe_allow_html=True)
 
@@ -170,13 +101,9 @@ with col2:
 
     if predict_btn:
         input_data = pd.DataFrame([{
-            "SoC": SoC,
-            "Speed (Km/h)": Speed,
-            "Temperature": Temperature,
-            "Terrain": Terrain,
-            "Braking (m/s²)": Braking,
-            "Acceleration (m/s²)": Acceleration,
-            "Weather": Weather,
+            "SoC": SoC, "Speed (Km/h)": Speed, "Temperature": Temperature,
+            "Terrain": Terrain, "Braking (m/s²)": Braking,
+            "Acceleration (m/s²)": Acceleration, "Weather": Weather,
             "Prev_SoC": Prev_SoC
         }])
 
@@ -186,14 +113,10 @@ with col2:
 
             def energy_rate(speed, terrain, weather):
                 rate = 0.15
-                if speed <= 50:
-                    rate = 0.12
-                elif speed > 80:
-                    rate = 0.18
-                if terrain == "Hilly":
-                    rate *= 1.2
-                if weather == "Hot":
-                    rate *= 1.1
+                if speed <= 50: rate = 0.12
+                elif speed > 80: rate = 0.18
+                if terrain == "Hilly": rate *= 1.2
+                if weather == "Hot": rate *= 1.1
                 return rate
 
             rate = energy_rate(Speed, Terrain, Weather)
@@ -214,6 +137,36 @@ with col2:
         """)
         st.success("✅ Prediction complete! Check metrics above.")
 
+        # Store context for chatbot
+        st.session_state.last_prediction = {
+            "Predicted_SoC": predicted_SoC,
+            "Predicted_Range_km": predicted_range_km,
+            "Temperature": Temperature,
+            "Speed": Speed,
+            "Weather": Weather,
+            "Terrain": Terrain
+        }
+
+        # --- Auto Summary via OpenAI ---
+        openai.api_key = "YOUR_API_KEY_HERE"  # Replace this with your API key
+        with st.spinner("Generating summary..."):
+            summary_prompt = f"""
+            Summarize this EV prediction briefly and clearly for a user:
+            - Range: {predicted_range_km:.1f} km
+            - SoC: {predicted_SoC:.1f}%
+            - Speed: {Speed} km/h
+            - Temperature: {Temperature}°C
+            - Weather: {Weather}
+            - Terrain: {Terrain}
+            Mention efficiency or tips if relevant.
+            """
+            response = openai.ChatCompletion.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": summary_prompt}]
+            )
+            summary = response["choices"][0]["message"]["content"]
+            st.info(summary)
+
 # RIGHT PANEL – Quick Stats
 with col3:
     st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
@@ -230,24 +183,32 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "Hi there! I'm your EV assistant. How can I help you today?"}
     ]
 
-# Display chat history (floating container)
+# Display previous chat
 for msg in st.session_state.messages:
-    if msg["role"] == "user":
-        st.chat_message("user").write(msg["content"])
-    else:
-        st.chat_message("assistant").write(msg["content"])
+    st.chat_message(msg["role"]).write(msg["content"])
 
-# Chat input (bottom right)
-if prompt := st.chat_input("Ask me about EV range, batteries, or driving tips..."):
+# Chat input
+if prompt := st.chat_input("Ask me about your EV, range, or battery tips..."):
     st.chat_message("user").write(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
+    context = ""
+    if "last_prediction" in st.session_state:
+        ctx = st.session_state.last_prediction
+        context = f"""
+        The user's latest EV prediction:
+        Range: {ctx['Predicted_Range_km']:.1f} km, SoC: {ctx['Predicted_SoC']:.1f}%,
+        Speed: {ctx['Speed']} km/h, Temp: {ctx['Temperature']}°C,
+        Weather: {ctx['Weather']}, Terrain: {ctx['Terrain']}.
+        Use this context when answering.
+        """
+
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            openai.api_key = "YOUR_API_KEY_HERE"  # ← Replace this with your API key
+            full_context = st.session_state.messages + [{"role": "system", "content": context}]
             response = openai.ChatCompletion.create(
                 model="gpt-4o-mini",
-                messages=st.session_state.messages
+                messages=full_context
             )
             reply = response["choices"][0]["message"]["content"]
             st.write(reply)
