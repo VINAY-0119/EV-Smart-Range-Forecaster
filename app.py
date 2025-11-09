@@ -26,7 +26,7 @@ def load_model():
 model = load_model()
 
 # =========================================================
-# --- CONFIGURE GEMINI CHATBOT ---
+# --- CONFIGURE GENERATIVE AI PRO MODEL ---
 # =========================================================
 @st.cache_resource
 def load_genai_model():
@@ -57,7 +57,7 @@ def load_genai_model():
         )
 
         genai_model = genai.GenerativeModel(
-            model_name="gemini-pro",
+            model_name="generative-ai-pro",  # Updated to Pro model
             tools=[predict_range_tool],
             generation_config=GenerationConfig(temperature=0.1)
         )
@@ -206,7 +206,7 @@ with col3:
     """)
 
 # =========================================================
-# --- CHATBOT SECTION (Gemini AI) ---
+# --- CHATBOT SECTION (Generative AI Pro) ---
 # =========================================================
 st.divider()
 st.markdown("<div class='section-title'>🤖 EV Chat Assistant</div>", unsafe_allow_html=True)
@@ -276,4 +276,4 @@ if prompt:
 # =========================================================
 # --- FOOTER ---
 # =========================================================
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Gemini AI</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Generative AI Pro</div>", unsafe_allow_html=True)
