@@ -47,40 +47,43 @@ def energy_rate(speed, terrain, weather, braking, acceleration):
     return rate
 
 # --- SETUP GOOGLE AI STUDIO API CLIENT ---
+
 google_api_available = False
 google_client = None
+google_project_id = None
+google_api_key = None
+google_location = "us-central1"  # update if needed
+google_model_id = "chat-bison-001"  # chat model
 
-if "google_ai_studio" in st.secrets and "api_key" in st.secrets["google_ai_studio"]:
-    try:
-        # Initialize client with API key and endpoint for your location
-        # Replace 'us-central1' with your actual location if different
-        google_client = glm.TextServiceClient(
-            client_options={"api_key": st.secrets["google_ai_studio"]["api_key"],
-                            "api_endpoint": "us-central1-aiplatform.googleapis.com"}
-        )
-        google_api_available = True
-    except Exception as e:
-        st.warning(f"⚠️ Google AI Studio API client init error: {type(e).__name__} - {e}")
+if "google_ai_studio" in st.secrets:
+    secrets = st.secrets["google_ai_studio"]
+    google_project_id = secrets.get("project_id")
+    google_api_key = secrets.get("api_key")
+    if google_project_id and google_api_key:
+        try:
+            client_options = {"api_endpoint": f"{google_location}-aiplatform.googleapis.com"}
+            google_client = glm.ChatServiceClient(client_options=client_options, api_key=google_api_key)
+            google_api_available = True
+        except Exception as e:
+            st.warning(f"⚠️ Google AI Studio API client init error: {type(e).__name__} - {e}")
+    else:
+        st.warning("⚠️ Google AI Studio project_id or api_key not found in secrets. Chatbot disabled.")
 else:
     st.warning("⚠️ Google AI Studio API key not found in secrets. Chatbot disabled.")
 
-def google_ai_studio_chat(prompt_text, model_name=None):
-    # Replace with your Google Cloud project ID and location
-    PROJECT_ID = "your-project-id"
-    LOCATION = "us-central1"
-
-    if model_name is None:
-        model_name = f"projects/{PROJECT_ID}/locations/{LOCATION}/models/chat-bison-001"
-
+def google_ai_studio_chat(prompt_text):
+    if not google_api_available:
+        return "⚠️ Google AI Studio API not configured or unavailable."
     try:
-        request = glm.GenerateTextRequest(
+        model_name = f"projects/{google_project_id}/locations/{google_location}/models/{google_model_id}"
+        request = glm.ChatRequest(
             model=model_name,
-            prompt=glm.TextPrompt(text=prompt_text),
+            messages=[glm.ChatMessage(content=prompt_text, author="user")],
             temperature=0.7,
-            max_output_tokens=300
+            max_tokens=300
         )
-        response = google_client.generate_text(request=request)
-        return response.candidates[0].output
+        response = google_client.chat(request=request)
+        return response.choices[0].message.content
     except Exception as e:
         return f"⚠️ Google AI Studio API error: {type(e).__name__} - {e}"
 
@@ -221,10 +224,7 @@ if prompt:
         st.markdown(prompt)
 
     with st.spinner("Thinking..."):
-        if google_api_available:
-            ai_text = google_ai_studio_chat(prompt)
-        else:
-            ai_text = "⚠️ Google AI Studio API key not configured. Chatbot unavailable."
+        ai_text = google_ai_studio_chat(prompt)
 
     with st.chat_message("assistant"):
         st.markdown(ai_text)
