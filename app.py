@@ -256,4 +256,4 @@ if prompt:
     st.session_state.processing = False
 
 # --- FOOTER ---
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI GPT + Google Generative Language (Gemini)</div>", unsafe_allow_html=True) for this add some chatbot using api keys 
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI GPT + Google Generative Language (Gemini)</div>", unsafe_allow_html=True)
