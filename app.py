@@ -69,7 +69,8 @@ openai_available = setup_openai()
 
 def openai_chat_response(messages):
     try:
-        response = openai.ChatCompletion.create(
+        # Updated API call for OpenAI Python SDK v1.0+
+        response = openai.chat.completions.create(
             model="gpt-4",
             messages=messages,
             temperature=0.1
