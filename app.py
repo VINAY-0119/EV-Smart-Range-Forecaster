@@ -4,7 +4,7 @@ import joblib
 import time
 import random
 import openai
-import sklearn  # ensure sklearn is imported for model compatibility
+import sklearn  # Ensure sklearn is imported for model compatibility
 
 # ================================
 # --- PATCH sklearn _RemainderColsList ISSUE ---
@@ -48,11 +48,16 @@ model = load_model()
 # ================================
 def energy_rate(speed, terrain, weather, braking, acceleration):
     rate = 0.15
-    if speed <= 50: rate = 0.12
-    elif speed > 80: rate = 0.18
-    if terrain == "Hilly": rate *= 1.2
-    if weather == "Hot": rate *= 1.1
-    if weather == "Cold": rate *= 1.15
+    if speed <= 50: 
+        rate = 0.12
+    elif speed > 80: 
+        rate = 0.18
+    if terrain == "Hilly": 
+        rate *= 1.2
+    if weather == "Hot": 
+        rate *= 1.1
+    if weather == "Cold": 
+        rate *= 1.15
     rate *= 1 + 0.05 * braking + 0.07 * acceleration
     return rate
 
@@ -60,16 +65,18 @@ def energy_rate(speed, terrain, weather, braking, acceleration):
 # --- SETUP OPENAI API ---
 # ================================
 def setup_openai():
-    if "OPENAI_API_KEY" in st.secrets:
+    if "OPENAI_API_KEY" in st.secrets and st.secrets["OPENAI_API_KEY"].strip() != "":
         openai.api_key = st.secrets["OPENAI_API_KEY"]
         return True
-    return False
+    else:
+        st.warning("⚠️ OpenAI API key not found. Chatbot disabled.")
+        return False
 
 openai_available = setup_openai()
 
 def openai_chat_response(messages):
     try:
-        # Updated API call for OpenAI Python SDK v1.0+
+        # Try GPT-4 first
         response = openai.chat.completions.create(
             model="gpt-4",
             messages=messages,
@@ -77,7 +84,19 @@ def openai_chat_response(messages):
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"⚠️ OpenAI API error: {type(e).__name__} - {e}"
+        # Fallback to GPT-3.5-turbo if GPT-4 is unavailable or error 404
+        if "model_not_found" in str(e).lower() or "404" in str(e):
+            try:
+                response = openai.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=messages,
+                    temperature=0.1
+                )
+                return response.choices[0].message.content
+            except Exception as e2:
+                return f"⚠️ OpenAI API error: {type(e2).__name__} - {e2}"
+        else:
+            return f"⚠️ OpenAI API error: {type(e).__name__} - {e}"
 
 # ================================
 # --- PAGE STYLING ---
