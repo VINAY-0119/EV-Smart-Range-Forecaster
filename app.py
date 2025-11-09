@@ -3,6 +3,7 @@ import pandas as pd
 import joblib
 import time
 import random
+import openai
 
 # --- App Configuration ---
 st.set_page_config(
@@ -18,69 +19,20 @@ def load_model():
 
 model = load_model()
 
-# --- Modern Clean CSS ---
+# --- CSS Styling ---
 st.markdown("""
 <style>
-    .main {
-        background-color: #FFFFFF;
-        color: #111827;
-        font-family: 'Inter', sans-serif;
-    }
-    .hero {
-        text-align: center;
-        background: linear-gradient(90deg, #E0F2FE, #F8FAFC);
-        padding: 35px 15px;
-        border-radius: 12px;
-        margin-bottom: 40px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
-    .hero-title {
-        font-size: 42px;
-        font-weight: 800;
-        color: #0F172A;
-        margin-bottom: 10px;
-    }
-    .hero-subtitle {
-        font-size: 16px;
-        color: #475569;
-        font-weight: 400;
-        max-width: 650px;
-        margin: 0 auto;
-    }
-    .section-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: #1E293B;
-        margin-top: 10px;
-        margin-bottom: 10px;
-    }
-    .stButton>button {
-        background-color: #2563EB;
-        color: #FFFFFF;
-        border-radius: 6px;
-        font-weight: 600;
-        border: none;
-        padding: 0.6rem 1.4rem;
-        transition: background 0.2s ease, transform 0.15s ease;
-    }
-    .stButton>button:hover {
-        background-color: #1E40AF;
-        transform: scale(1.02);
-    }
-    .footer {
-        text-align: center;
-        font-size: 12px;
-        margin-top: 50px;
-        color: #6B7280;
-    }
-    .chatbox {
-        border: 1px solid #E5E7EB;
-        background: #F9FAFB;
-        border-radius: 12px;
-        padding: 1rem;
-        height: 500px;
-        overflow-y: auto;
-    }
+    .main { background-color: #FFFFFF; color: #111827; font-family: 'Inter', sans-serif; }
+    .hero { text-align: center; background: linear-gradient(90deg, #E0F2FE, #F8FAFC); padding: 35px 15px; border-radius: 12px; margin-bottom: 40px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .hero-title { font-size: 42px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .hero-subtitle { font-size: 16px; color: #475569; font-weight: 400; max-width: 650px; margin: 0 auto; }
+    .section-title { font-size: 18px; font-weight: 600; color: #1E293B; margin-top: 10px; margin-bottom: 10px; }
+    .stButton>button { background-color: #2563EB; color: #FFFFFF; border-radius: 6px; font-weight: 600; border: none; padding: 0.6rem 1.4rem; transition: background 0.2s ease, transform 0.15s ease; }
+    .stButton>button:hover { background-color: #1E40AF; transform: scale(1.02); }
+    .footer { text-align: center; font-size: 12px; margin-top: 50px; color: #6B7280; }
+    .chat-container { border: 1px solid #E5E7EB; border-radius: 10px; padding: 15px; background-color: #F9FAFB; margin-top: 25px; }
+    .user-msg { background-color: #2563EB; color: white; padding: 8px 12px; border-radius: 10px; margin-bottom: 5px; max-width: 80%; margin-left: auto; }
+    .bot-msg { background-color: #E5E7EB; color: #111827; padding: 8px 12px; border-radius: 10px; margin-bottom: 5px; max-width: 80%; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -96,7 +48,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Layout ---
-col1, col2, col3 = st.columns([1.2, 2.3, 1.5])
+col1, col2, col3 = st.columns([1.2, 2.3, 1.2])
 
 # LEFT PANEL – EV Insights
 with col1:
@@ -108,7 +60,6 @@ with col1:
     - Optimal Temperature: **20–25°C**  
     - Efficiency improves with **moderate speeds**
     """)
-
     st.markdown("<div class='section-title'>💡 Smart Driving Tip</div>", unsafe_allow_html=True)
     tips = [
         "Keep tire pressure optimal to maximize efficiency.",
@@ -119,7 +70,7 @@ with col1:
     ]
     st.markdown(f"✅ {random.choice(tips)}")
 
-# CENTER PANEL – Prediction
+# CENTER PANEL – Prediction Form
 with col2:
     st.markdown("<div class='section-title'>🧩 Input Parameters</div>", unsafe_allow_html=True)
 
@@ -184,42 +135,58 @@ with col2:
         """)
         st.success("✅ Prediction complete! Check metrics above.")
 
-# RIGHT PANEL – Chatbot
+# RIGHT PANEL – Quick Stats
 with col3:
-    st.markdown("<div class='section-title'>💬 EV Assistant Chatbot</div>", unsafe_allow_html=True)
-    st.markdown("Ask me about EV range, battery tips, or driving efficiency!")
+    st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
+    st.markdown("""
+    - **Energy Efficiency:** 91%  
+    - **Charging Infrastructure:** 82% coverage  
+    - **Top Efficient Models:** Model 3, Kona, Leaf  
+    - **Avg User Range:** 412 km  
+    """)
 
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+# --- Chatbot Section ---
+st.markdown("<div class='section-title'>🤖 EV Chat Assistant</div>", unsafe_allow_html=True)
+st.markdown("<p style='color:#475569;'>Ask any question about electric vehicles or driving efficiency.</p>", unsafe_allow_html=True)
 
-    # Display chat messages
-    for message in st.session_state.chat_history:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-    # Chat input
-    user_input = st.chat_input("Type your question here...")
-
-    if user_input:
-        st.session_state.chat_history.append({"role": "user", "content": user_input})
-
-        # Simple rule-based chatbot for demonstration (you can connect GPT API if needed)
-        if "range" in user_input.lower():
-            bot_reply = "The driving range depends on factors like speed, temperature, and terrain. Moderate speed (60–80 km/h) gives the best range."
-        elif "battery" in user_input.lower():
-            bot_reply = "Keep your battery between 20–80% for long-term health. Avoid frequent full charges."
-        elif "charge" in user_input.lower():
-            bot_reply = "Fast chargers can recharge most EVs in 30–45 minutes. Use them sparingly to extend battery life."
-        elif "weather" in user_input.lower():
-            bot_reply = "Cold and hot weather can reduce efficiency by 10–20%. Keep the cabin preconditioned while charging."
+# --- Chat Display ---
+with st.container():
+    st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
+    for chat in st.session_state.chat_history:
+        if chat["role"] == "user":
+            st.markdown(f"<div class='user-msg'>{chat['content']}</div>", unsafe_allow_html=True)
         else:
-            bot_reply = "I can help with EV range, battery care, charging tips, and efficiency insights!"
+            st.markdown(f"<div class='bot-msg'>{chat['content']}</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-        st.session_state.chat_history.append({"role": "assistant", "content": bot_reply})
+user_input = st.text_input("Type your question:", placeholder="e.g., How can I extend my EV battery life?")
 
-        # Display assistant message instantly
-        with st.chat_message("assistant"):
-            st.markdown(bot_reply)
+if user_input:
+    st.session_state.chat_history.append({"role": "user", "content": user_input})
 
-# --- Footer ---
+    try:
+        # --- Load API key from Streamlit secrets ---
+        openai.api_key = st.secrets["openai"]["api_key"]
+
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an expert EV assistant helping users with electric vehicle insights."},
+                *st.session_state.chat_history
+            ]
+        )
+
+        bot_reply = response["choices"][0]["message"]["content"]
+
+    except Exception as e:
+        bot_reply = f"⚠️ Error: {e}"
+
+    st.session_state.chat_history.append({"role": "assistant", "content": bot_reply})
+    st.rerun()
+
+# --- Footer --- 
 st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit</div>", unsafe_allow_html=True)
+
