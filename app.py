@@ -7,6 +7,16 @@ import openai
 import sklearn  # ensure sklearn is imported for model compatibility
 
 # ================================
+# --- PATCH sklearn _RemainderColsList ISSUE ---
+# ================================
+import sklearn.compose._column_transformer as ctf
+
+if not hasattr(ctf, '_RemainderColsList'):
+    class _RemainderColsList(list):
+        pass
+    ctf._RemainderColsList = _RemainderColsList
+
+# ================================
 # --- PAGE CONFIGURATION ---
 # ================================
 st.set_page_config(
