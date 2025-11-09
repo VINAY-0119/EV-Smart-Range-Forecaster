@@ -3,6 +3,7 @@ import pandas as pd
 import joblib
 import time
 import random
+import json
 import google.generativeai as genai
 from google.generativeai.types import GenerationConfig, FunctionDeclaration
 
@@ -243,9 +244,11 @@ if prompt:
                 response = chat.send_message(prompt)
                 part = response.candidates[0].content.parts[0]
 
-                # Function call case
                 if hasattr(part, "function_call") and part.function_call.name == "predict_ev_range":
-                    args = part.function_call.args or {}
+                    args = part.function_call.args
+                    if isinstance(args, str):
+                        args = json.loads(args)
+
                     speed = float(args.get("speed_kmh", 60))
                     temp = float(args.get("temperature_c", 25))
                     terrain = args.get("terrain", "Flat")
@@ -278,7 +281,7 @@ if prompt:
 
     st.session_state.chat_messages.append({"role": "assistant", "content": ai_text})
     st.session_state.processing = False
-    st.rerun()
+    st.experimental_rerun()
 
 # =========================================================
 # --- FOOTER ---
