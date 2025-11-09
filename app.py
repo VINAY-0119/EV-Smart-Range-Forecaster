@@ -4,11 +4,7 @@ import joblib
 import time
 import random
 import sklearn  # for model compatibility
-
-# Install google-generative-ai before running:
-# pip install google-generative-ai
-
-import google.generativeai as palm
+import openai
 
 # ================================
 # --- PATCH sklearn _RemainderColsList ISSUE ---
@@ -61,28 +57,28 @@ def energy_rate(speed, terrain, weather, braking, acceleration):
     return rate
 
 # ================================
-# --- SETUP GOOGLE GEMINI (PaLM) API ---
+# --- SETUP GEMINI AI (OpenAI-compatible API) ---
 # ================================
-def setup_google_palm():
+def setup_gemini_ai():
     if "GOOGLE_API_KEY" in st.secrets:
-        palm.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+        openai.api_key = st.secrets["GOOGLE_API_KEY"]
         return True
     else:
-        st.warning("⚠️ Google API key not found in secrets. Chatbot disabled.")
+        st.warning("⚠️ API key not found in secrets. Chatbot disabled.")
         return False
 
-google_api_available = setup_google_palm()
+google_api_available = setup_gemini_ai()
 
 def gemini_chat_response(prompt):
     try:
-        response = palm.chat(
-            model="models/chat-bison-001",  # PaLM 2 chat model
-            messages=[{"author": "user", "content": prompt}],
+        response = openai.ChatCompletion.create(
+            model="gemini-2.5-turbo",  # Replace with your actual Gemini model name
+            messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
         )
-        return response.last.strip()
+        return response.choices[0].message['content'].strip()
     except Exception as e:
-        return f"⚠️ Google API error: {type(e).__name__} - {e}"
+        return f"⚠️ API error: {type(e).__name__} - {e}"
 
 # ================================
 # --- PAGE STYLING ---
@@ -234,13 +230,13 @@ if prompt:
         st.markdown(prompt)
 
     with st.spinner("Thinking..."):
-        ai_text = "⚠️ Google API key not found or error."
+        ai_text = "⚠️ API key not found or error."
 
         if google_api_available:
             try:
                 ai_text = gemini_chat_response(prompt)
             except Exception as e:
-                ai_text = f"⚠️ Google API error: {type(e).__name__} - {e}"
+                ai_text = f"⚠️ API error: {type(e).__name__} - {e}"
 
     with st.chat_message("assistant"):
         st.markdown(ai_text)
@@ -251,4 +247,4 @@ if prompt:
 # ================================
 # --- FOOTER ---
 # ================================
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Google Gemini AI</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Gemini AI</div>", unsafe_allow_html=True)
