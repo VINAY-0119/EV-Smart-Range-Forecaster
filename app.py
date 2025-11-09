@@ -12,6 +12,12 @@ if not hasattr(ctf, '_RemainderColsList'):
         pass
     ctf._RemainderColsList = _RemainderColsList
 
+# --- TRY IMPORT GEMINI CLIENT ---
+try:
+    from google.ai import gemini as gem
+except ImportError:
+    gem = None  # Gemini SDK not installed or available
+
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
     page_title="EV Range Predictor",
@@ -61,6 +67,24 @@ if "google_ai_studio" in st.secrets and "api_key" in st.secrets["google_ai_studi
 else:
     st.warning("⚠️ Google AI Studio API key not found in secrets. Chatbot disabled.")
 
+# --- SETUP GEMINI API CLIENT ---
+gemini_api_available = False
+gemini_client = None
+
+if gem is not None and "gemini_ai" in st.secrets and "api_key" in st.secrets["gemini_ai"]:
+    try:
+        gemini_client = gem.GeminiClient(
+            client_options={"api_key": st.secrets["gemini_ai"]["api_key"]}
+        )
+        gemini_api_available = True
+    except Exception as e:
+        st.warning(f"⚠️ Gemini API client init error: {type(e).__name__} - {e}")
+elif gem is None:
+    st.warning("⚠️ Gemini SDK not installed or available. Gemini chatbot disabled.")
+else:
+    st.warning("⚠️ Gemini API key not found in secrets. Gemini chatbot disabled.")
+
+# --- FUNCTION TO CALL GOOGLE AI STUDIO CHAT ---
 def google_ai_studio_chat(prompt_text, model_name="models/chat-bison-001"):
     try:
         request = glm.GenerateTextRequest(
@@ -73,6 +97,20 @@ def google_ai_studio_chat(prompt_text, model_name="models/chat-bison-001"):
         return response.candidates[0].output
     except Exception as e:
         return f"⚠️ Google AI Studio API error: {type(e).__name__} - {e}"
+
+# --- FUNCTION TO CALL GEMINI CHAT ---
+def gemini_ai_chat(prompt_text, model_name="gemini-1.0-chat"):
+    try:
+        request = gem.GenerateTextRequest(
+            model=model_name,
+            prompt=gem.TextPrompt(text=prompt_text),
+            temperature=0.7,
+            max_output_tokens=300
+        )
+        response = gemini_client.generate_text(request=request)
+        return response.candidates[0].output
+    except Exception as e:
+        return f"⚠️ Gemini API error: {type(e).__name__} - {e}"
 
 # --- PAGE STYLING ---
 st.markdown("""
@@ -211,10 +249,12 @@ if prompt:
         st.markdown(prompt)
 
     with st.spinner("Thinking..."):
-        if google_api_available:
+        if gemini_api_available:
+            ai_text = gemini_ai_chat(prompt)
+        elif google_api_available:
             ai_text = google_ai_studio_chat(prompt)
         else:
-            ai_text = "⚠️ Google AI Studio API key not configured. Chatbot unavailable."
+            ai_text = "⚠️ No AI chatbot configured. Please provide API keys."
 
     with st.chat_message("assistant"):
         st.markdown(ai_text)
@@ -223,4 +263,4 @@ if prompt:
     st.session_state.processing = False
 
 # --- FOOTER ---
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Google AI Studio</div>", unsafe_allow_html=True) 
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Google AI Studio + Gemini AI</div>", unsafe_allow_html=True)
