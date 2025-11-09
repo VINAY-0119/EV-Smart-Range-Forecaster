@@ -3,6 +3,7 @@ import pandas as pd
 import joblib
 import time
 import random
+from openai import OpenAI
 
 # --- App Configuration ---
 st.set_page_config(
@@ -12,23 +13,24 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# --- Load Model ---
 @st.cache_resource
 def load_model():
     return joblib.load("ev_range_predictor_reduced.pkl")
 
 model = load_model()
 
-# --- Professional Modern CSS (No Blocks, Clean Layout) ---
+# --- Load API Key from Streamlit Secrets ---
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+# --- CSS Styling ---
 st.markdown("""
 <style>
-    /* Global */
     .main {
         background-color: #FFFFFF;
         color: #111827;
         font-family: 'Inter', sans-serif;
     }
-
-    /* Hero Header */
     .hero {
         text-align: center;
         background: linear-gradient(90deg, #E0F2FE, #F8FAFC);
@@ -37,7 +39,6 @@ st.markdown("""
         margin-bottom: 40px;
         box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
-
     .hero-title {
         font-size: 42px;
         font-weight: 800;
@@ -45,7 +46,6 @@ st.markdown("""
         letter-spacing: 0.5px;
         margin-bottom: 10px;
     }
-
     .hero-subtitle {
         font-size: 16px;
         color: #475569;
@@ -53,8 +53,6 @@ st.markdown("""
         max-width: 650px;
         margin: 0 auto;
     }
-
-    /* Section Titles */
     .section-title {
         font-size: 18px;
         font-weight: 600;
@@ -62,8 +60,6 @@ st.markdown("""
         margin-top: 10px;
         margin-bottom: 10px;
     }
-
-    /* Button */
     .stButton>button {
         background-color: #2563EB;
         color: #FFFFFF;
@@ -73,13 +69,10 @@ st.markdown("""
         padding: 0.6rem 1.4rem;
         transition: background 0.2s ease, transform 0.15s ease;
     }
-
     .stButton>button:hover {
         background-color: #1E40AF;
         transform: scale(1.02);
     }
-
-    /* Footer */
     .footer {
         text-align: center;
         font-size: 12px;
@@ -189,7 +182,7 @@ with col2:
         """)
         st.success("✅ Prediction complete! Check metrics above.")
 
-# RIGHT PANEL – Quick Stats
+# RIGHT PANEL – Quick Stats + Chatbot
 with col3:
     st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
     st.markdown("""
@@ -199,5 +192,34 @@ with col3:
     - **Avg User Range:** 412 km  
     """)
 
-# --- Footer --- 
+    st.markdown("<div class='section-title'>💬 Ask EV Chatbot</div>", unsafe_allow_html=True)
+
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    for message in st.session_state.chat_history:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if prompt := st.chat_input("Ask me anything about EVs, range, or battery life..."):
+        st.session_state.chat_history.append({"role": "user", "content": prompt})
+
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": "You are a helpful EV expert who answers clearly and concisely."},
+                        *st.session_state.chat_history
+                    ]
+                )
+                answer = response.choices[0].message.content
+                st.markdown(answer)
+
+        st.session_state.chat_history.append({"role": "assistant", "content": answer})
+
+# --- Footer ---
 st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit</div>", unsafe_allow_html=True)
