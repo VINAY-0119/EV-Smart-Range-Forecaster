@@ -46,25 +46,20 @@ def energy_rate(speed, terrain, weather, braking, acceleration):
     rate *= 1 + 0.05 * braking + 0.07 * acceleration
     return rate
 
-# --- SETUP GEMINI AI (OPENAI API) CLIENT ---
-gemini_api_available = False
-if "gemini_api_key" in st.secrets:
-    openai.api_key = st.secrets["gemini_api_key"]
-    gemini_api_available = True
-else:
-    st.warning("⚠️ Gemini AI API key not found in secrets. Gemini chatbot disabled.")
+# --- SETUP OPENAI API KEY ---
+openai.api_key = st.secrets["openai"]["api_key"]
 
-def gemini_chat_completion(messages, model="gpt-4o-mini"):
+def openai_chat_completion(messages, model="gpt-4"):
     try:
         response = openai.ChatCompletion.create(
             model=model,
             messages=messages,
             temperature=0.7,
-            max_tokens=300
+            max_tokens=300,
         )
         return response.choices[0].message["content"]
     except Exception as e:
-        return f"⚠️ Gemini AI API error: {type(e).__name__} - {e}"
+        return f"⚠️ OpenAI API error: {type(e).__name__} - {e}"
 
 # --- PAGE STYLING ---
 st.markdown("""
@@ -203,11 +198,7 @@ if prompt:
         st.markdown(prompt)
 
     with st.spinner("Thinking..."):
-        if gemini_api_available:
-            # Pass full chat history for context to Gemini AI
-            ai_text = gemini_chat_completion(st.session_state.chat_messages)
-        else:
-            ai_text = "⚠️ Gemini AI API key not configured. Chatbot unavailable."
+        ai_text = openai_chat_completion(st.session_state.chat_messages)
 
     with st.chat_message("assistant"):
         st.markdown(ai_text)
@@ -216,4 +207,4 @@ if prompt:
     st.session_state.processing = False
 
 # --- FOOTER ---
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Gemini AI</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI</div>", unsafe_allow_html=True)
