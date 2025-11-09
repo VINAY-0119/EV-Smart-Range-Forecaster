@@ -6,6 +6,9 @@ import random
 import sklearn  # for model compatibility
 import openai
 
+# Google Generative Language API imports
+from google.ai import generativelanguage as gl
+
 # ================================
 # --- PATCH sklearn _RemainderColsList ISSUE ---
 # ================================
@@ -64,7 +67,7 @@ def setup_openai():
         openai.api_key = st.secrets["OPENAI_API_KEY"]
         return True
     else:
-        st.warning("⚠️ OpenAI API key not found in secrets. Chatbot disabled.")
+        st.warning("⚠️ OpenAI API key not found in secrets. OpenAI chatbot disabled.")
         return False
 
 openai_api_available = setup_openai()
@@ -72,14 +75,41 @@ openai_api_available = setup_openai()
 def openai_chat_response(prompt):
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # fixed model name
+            model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
             max_tokens=500
         )
         return response.choices[0].message['content'].strip()
     except Exception as e:
-        return f"⚠️ API error: {type(e).__name__} - {e}"
+        return f"⚠️ OpenAI API error: {type(e).__name__} - {e}"
+
+# ================================
+# --- SETUP GOOGLE GENERATIVE LANGUAGE API ---
+# ================================
+def setup_google_api():
+    if "google" in st.secrets and "api_key" in st.secrets["google"]:
+        client = gl.TextServiceClient(
+            client_options={"api_key": st.secrets["google"]["api_key"]}
+        )
+        return client
+    else:
+        st.warning("⚠️ Google AI Studio API key not found in secrets. Google chatbot disabled.")
+        return None
+
+google_client = setup_google_api()
+
+def google_chat_response(client, prompt):
+    try:
+        response = client.generate_text(
+            model="models/chat-bison-001",
+            prompt=gl.GenerateTextRequest.Prompt(text=prompt),
+            temperature=0.1,
+            max_tokens=500,
+        )
+        return response.candidates[0].output.strip()
+    except Exception as e:
+        return f"⚠️ Google API error: {type(e).__name__} - {e}"
 
 # ================================
 # --- PAGE STYLING ---
@@ -231,13 +261,16 @@ if prompt:
         st.markdown(prompt)
 
     with st.spinner("Thinking..."):
-        ai_text = "⚠️ API key not found or error."
+        ai_text = "⚠️ No API key available for chatbot."
 
+        # Try OpenAI first, then Google if OpenAI unavailable
         if openai_api_available:
             try:
                 ai_text = openai_chat_response(prompt)
             except Exception as e:
-                ai_text = f"⚠️ API error: {type(e).__name__} - {e}"
+                ai_text = f"⚠️ OpenAI API error: {type(e).__name__} - {e}"
+        elif google_client is not None:
+            ai_text = google_chat_response(google_client, prompt)
 
     with st.chat_message("assistant"):
         st.markdown(ai_text)
@@ -248,4 +281,4 @@ if prompt:
 # ================================
 # --- FOOTER ---
 # ================================
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI GPT</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI GPT + Google AI Studio</div>", unsafe_allow_html=True)
