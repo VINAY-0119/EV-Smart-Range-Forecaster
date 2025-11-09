@@ -66,7 +66,7 @@ if "OPENAI_API_KEY" in st.secrets:
     openai_client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
     openai_api_available = True
 else:
-    st.warning("⚠️ OpenAI API key not found in secrets. OpenAI chatbot disabled.")
+    st.warning("⚠️ OpenAI API key not found in secrets. Chatbot disabled.")
 
 def openai_chat_response(prompt):
     try:
@@ -94,13 +94,13 @@ if "google" in st.secrets and "api_key" in st.secrets["google"]:
 else:
     st.warning("⚠️ Google Generative Language API key not found in secrets. Google chatbot disabled.")
 
-def google_generate_text(prompt_text, model_name="models/text-bison-001"):
+def google_generate_text(prompt_text):
     try:
         request = glm.GenerateTextRequest(
-            model=model_name,
+            model="models/text-bison-001",
             prompt=glm.TextPrompt(text=prompt_text),
             temperature=0.7,
-            max_tokens=300
+            max_output_tokens=300  # <-- Correct field name
         )
         response = google_client.generate_text(request=request)
         return response.candidates[0].output
@@ -242,9 +242,6 @@ if "chat_messages" not in st.session_state:
 if "processing" not in st.session_state:
     st.session_state.processing = False
 
-# Model selector for chatbot
-model_choice = st.selectbox("Choose AI Model for Chatbot", ["OpenAI GPT-3.5", "Google Bison", "Google Gemini"])
-
 # Display chat history
 for msg in st.session_state.chat_messages:
     with st.chat_message(msg["role"]):
@@ -262,12 +259,13 @@ if prompt:
     with st.spinner("Thinking..."):
         ai_text = "⚠️ No API available."
 
-        if model_choice == "OpenAI GPT-3.5" and openai_api_available:
+        # Try OpenAI first
+        if openai_api_available:
             ai_text = openai_chat_response(prompt)
-        elif model_choice == "Google Gemini" and google_api_available:
-            ai_text = google_generate_text(prompt, model_name="models/gemini-1")
-        elif model_choice == "Google Bison" and google_api_available:
-            ai_text = google_generate_text(prompt, model_name="models/text-bison-001")
+
+        # If OpenAI unavailable, try Google Generative Language API
+        elif google_api_available:
+            ai_text = google_generate_text(prompt)
 
     with st.chat_message("assistant"):
         st.markdown(ai_text)
@@ -278,4 +276,4 @@ if prompt:
 # ================================
 # --- FOOTER ---
 # ================================
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI GPT + Google Generative Language (Gemini)</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI GPT + Google Generative Language</div>", unsafe_allow_html=True)
