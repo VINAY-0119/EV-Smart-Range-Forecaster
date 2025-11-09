@@ -52,8 +52,11 @@ google_client = None
 
 if "google_ai_studio" in st.secrets and "api_key" in st.secrets["google_ai_studio"]:
     try:
+        # Initialize client with API key and endpoint for your location
+        # Replace 'us-central1' with your actual location if different
         google_client = glm.TextServiceClient(
-            client_options={"api_key": st.secrets["google_ai_studio"]["api_key"]}
+            client_options={"api_key": st.secrets["google_ai_studio"]["api_key"],
+                            "api_endpoint": "us-central1-aiplatform.googleapis.com"}
         )
         google_api_available = True
     except Exception as e:
@@ -61,7 +64,14 @@ if "google_ai_studio" in st.secrets and "api_key" in st.secrets["google_ai_studi
 else:
     st.warning("⚠️ Google AI Studio API key not found in secrets. Chatbot disabled.")
 
-def google_ai_studio_chat(prompt_text, model_name="models/chat-bison-001"):
+def google_ai_studio_chat(prompt_text, model_name=None):
+    # Replace with your Google Cloud project ID and location
+    PROJECT_ID = "your-project-id"
+    LOCATION = "us-central1"
+
+    if model_name is None:
+        model_name = f"projects/{PROJECT_ID}/locations/{LOCATION}/models/chat-bison-001"
+
     try:
         request = glm.GenerateTextRequest(
             model=model_name,
