@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 import time
 import random
-from google.ai import generativelanguage as glm # Re-added Google Generative Language import (adapted for Gemini)
+from google.ai import generativelanguage as glm
 
 # --- PATCH sklearn _RemainderColsList ISSUE ---
 import sklearn.compose._column_transformer as ctf
@@ -23,7 +23,6 @@ st.set_page_config(
 # --- LOAD ML MODEL ---
 @st.cache_resource
 def load_model():
-    """Loads the pre-trained ML model for prediction."""
     try:
         model = joblib.load("ev_range_predictor_reduced.pkl")
         return model
@@ -38,54 +37,42 @@ model = load_model()
 
 # --- HELPER FUNCTION FOR ENERGY RATE ---
 def energy_rate(speed, terrain, weather, braking, acceleration):
-    """Calculates an approximate energy consumption rate (kWh/km) based on driving conditions."""
     rate = 0.15
     if speed <= 50: rate = 0.12
     elif speed > 80: rate = 0.18
     if terrain == "Hilly": rate *= 1.2
     if weather == "Hot": rate *= 1.1
     if weather == "Cold": rate *= 1.15
-    # Aggressiveness increases consumption
     rate *= 1 + 0.05 * braking + 0.07 * acceleration
     return rate
 
-# --- SETUP GOOGLE GENERATIVE LANGUAGE CLIENT (For Gemini) ---
+# --- SETUP GOOGLE AI STUDIO API CLIENT ---
 google_api_available = False
 google_client = None
-GEMINI_MODEL = "gemini-2.5-flash"
 
-if "google" in st.secrets and "api_key" in st.secrets["google"]:
+if "google_ai_studio" in st.secrets and "api_key" in st.secrets["google_ai_studio"]:
     try:
-        # Initialize the client using the API key from Streamlit secrets
         google_client = glm.TextServiceClient(
-            client_options={"api_key": st.secrets["google"]["api_key"]}
+            client_options={"api_key": st.secrets["google_ai_studio"]["api_key"]}
         )
         google_api_available = True
     except Exception as e:
-        st.warning(f"⚠️ Google Generative Language API client init error: {type(e).__name__} - {e}")
+        st.warning(f"⚠️ Google AI Studio API client init error: {type(e).__name__} - {e}")
 else:
-    st.warning("⚠️ Google Generative Language API key not found in secrets. Gemini Chat Assistant disabled.")
+    st.warning("⚠️ Google AI Studio API key not found in secrets. Chatbot disabled.")
 
-def gemini_chat_response(prompt_text):
-    """Generates a text response using the Google Gemini API."""
-    if not google_api_available or google_client is None:
-        return "⚠️ Gemini Chat Assistant is disabled because the API key is missing or failed to initialize."
+def google_ai_studio_chat(prompt_text, model_name="models/chat-bison-001"):
     try:
-        # Note: The 'generate_text' method is used here to align with the older 'glm' import structure,
-        # but in a real-world Streamlit app, you would use the modern 'google-genai' library and 'generate_content'.
-        # We simulate the API request structure here for the chat model.
-        response = google_client.generate_content(
-            model=GEMINI_MODEL,
-            contents=[{"role": "user", "parts": [{"text": prompt_text}]}],
-            config=glm.GenerateContentConfig(
-                temperature=0.7,
-                max_output_tokens=500
-            )
+        request = glm.GenerateTextRequest(
+            model=model_name,
+            prompt=glm.TextPrompt(text=prompt_text),
+            temperature=0.7,
+            max_output_tokens=300
         )
-        # Assuming the response structure for text extraction
-        return response.candidates[0].content.parts[0].text
+        response = google_client.generate_text(request=request)
+        return response.candidates[0].output
     except Exception as e:
-        return f"⚠️ Gemini API error (using {GEMINI_MODEL}): {type(e).__name__} - {e}. Ensure the correct client library is available."
+        return f"⚠️ Google AI Studio API error: {type(e).__name__} - {e}"
 
 # --- PAGE STYLING ---
 st.markdown("""
@@ -97,10 +84,10 @@ st.markdown("""
     .hero-title { font-size: 42px; font-weight: 800; color: #0F172A; margin-bottom: 10px; }
     .hero-subtitle { font-size: 16px; color: #475569; max-width: 650px; margin: 0 auto; }
     .section-title { font-size: 18px; font-weight: 600; color: #1E293B;
-                    margin-top: 10px; margin-bottom: 10px; }
+                     margin-top: 10px; margin-bottom: 10px; }
     .stButton>button { background-color: #2563EB; color: #FFFFFF; border-radius: 6px;
-                        font-weight: 600; border: none; padding: 0.6rem 1.4rem;
-                        transition: background 0.2s ease, transform 0.15s ease; }
+                       font-weight: 600; border: none; padding: 0.6rem 1.4rem;
+                       transition: background 0.2s ease, transform 0.15s ease; }
     .stButton>button:hover { background-color: #1E40AF; transform: scale(1.02); }
     .footer { text-align: center; font-size: 12px; margin-top: 50px; color: #6B7280; }
 </style>
@@ -111,7 +98,7 @@ st.markdown("""
 <div class="hero">
     <div class="hero-title">⚡ EV Vehicle Range Predictor 🚗</div>
     <div class="hero-subtitle">
-        Estimate your electric vehicle's driving range instantly.
+        Estimate your electric vehicle's driving range instantly.  
         Adjust speed, terrain, and weather to see how they affect performance and battery life.
     </div>
 </div>
@@ -123,10 +110,10 @@ col1, col2, col3 = st.columns([1.2, 2.3, 1.2])
 with col1:
     st.markdown("<div class='section-title'>⚙️ EV Insights</div>", unsafe_allow_html=True)
     st.markdown("""
-    - Typical Battery Capacity: **40–75 kWh**
-    - Average Driving Range: **300–500 km**
-    - Charging Time: **30–60 minutes**
-    - Optimal Temperature: **20–25°C**
+    - Typical Battery Capacity: **40–75 kWh**  
+    - Average Driving Range: **300–500 km**  
+    - Charging Time: **30–60 minutes**  
+    - Optimal Temperature: **20–25°C**  
     - Efficiency improves with **moderate speeds**
     """)
     st.markdown("<div class='section-title'>💡 Smart Driving Tip</div>", unsafe_allow_html=True)
@@ -173,12 +160,10 @@ with col2:
             with st.spinner("Calculating optimal range..."):
                 time.sleep(1)
                 try:
-                    # Model predicts the next State of Charge (SoC)
                     predicted_SoC = model.predict(input_data)[0]
 
-                    # Calculate range based on predicted SoC and custom energy rate
                     rate = energy_rate(Speed, Terrain, Weather, Braking, Acceleration)
-                    battery_capacity_kwh = 40  # Assuming a base battery size for calculation
+                    battery_capacity_kwh = 40
                     remaining_energy_kwh = (predicted_SoC / 100) * battery_capacity_kwh
                     predicted_range_km = remaining_energy_kwh / rate
 
@@ -190,7 +175,7 @@ with col2:
                         st.metric("Estimated Range (km)", f"{predicted_range_km:.1f}")
 
                     st.markdown(f"""
-                    **Remaining Battery Energy:** {remaining_energy_kwh:.2f} kWh
+                    **Remaining Battery Energy:** {remaining_energy_kwh:.2f} kWh  
                     **Energy Consumption Rate:** {rate:.3f} kWh/km
                     """)
                     st.success("✅ Prediction complete! Check metrics above.")
@@ -200,25 +185,21 @@ with col2:
 with col3:
     st.markdown("<div class='section-title'>📈 Quick Stats</div>", unsafe_allow_html=True)
     st.markdown("""
-    - **Energy Efficiency:** 91%
-    - **Charging Infrastructure:** 82% coverage
-    - **Top Efficient Models:** Model 3, Kona, Leaf
-    - **Avg User Range:** 412 km
+    - **Energy Efficiency:** 91%  
+    - **Charging Infrastructure:** 82% coverage  
+    - **Top Efficient Models:** Model 3, Kona, Leaf  
+    - **Avg User Range:** 412 km  
     """)
 
 # --- CHATBOT SECTION ---
 st.divider()
-st.markdown("<div class='section-title'>🤖 EV Chat Assistant (Powered by Gemini)</div>", unsafe_allow_html=True)
-st.info("Ask things like: 'What’s my range at 100 km/h in hot weather on hilly terrain?' or 'How does cold weather affect my EV?'")
+st.markdown("<div class='section-title'>🤖 EV Chat Assistant</div>", unsafe_allow_html=True)
+st.info("Ask questions like: 'What’s my range at 100 km/h in hot weather on hilly terrain?' or 'How does cold weather affect my EV?'")
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = []
 if "processing" not in st.session_state:
     st.session_state.processing = False
-
-for msg in st.session_state.chat_messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
 
 prompt = st.chat_input("Ask me about EVs, range, or efficiency...", disabled=st.session_state.processing)
 
@@ -226,28 +207,20 @@ if prompt:
     st.session_state.processing = True
     st.session_state.chat_messages.append({"role": "user", "content": prompt})
 
-    # Re-render all messages to show the user's latest input immediately
-    for msg in st.session_state.chat_messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
     with st.spinner("Thinking..."):
-        ai_text = "⚠️ Gemini Chat Assistant is currently unavailable. Please ensure your Streamlit secrets are configured correctly."
-
         if google_api_available:
-            ai_text = gemini_chat_response(prompt)
+            ai_text = google_ai_studio_chat(prompt)
         else:
-            # If API is not available, we need to show the error message in the chat
-            st.session_state.chat_messages.append({"role": "assistant", "content": ai_text})
+            ai_text = "⚠️ Google AI Studio API key not configured. Chatbot unavailable."
 
+    with st.chat_message("assistant"):
+        st.markdown(ai_text)
 
-    if google_api_available:
-        # Only append assistant message if API was successfully called
-        st.session_state.chat_messages.append({"role": "assistant", "content": ai_text})
-
+    st.session_state.chat_messages.append({"role": "assistant", "content": ai_text})
     st.session_state.processing = False
-    # Rerun the app to update the chat history
-    st.rerun()
 
 # --- FOOTER ---
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Google AI Studio</div>", unsafe_allow_html=True)
