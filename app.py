@@ -52,7 +52,7 @@ def openai_chat_completion(messages):
     openai.api_key = st.secrets["openai"]["api_key"]
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=messages,
             max_tokens=300,
             temperature=0.7
