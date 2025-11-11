@@ -4,3 +4,6 @@ joblib
 scikit-learn
 requests
 google-generativeai
+matplotlib
+altair
+google-auth
