@@ -39,20 +39,25 @@ model = load_model()
 # --- HELPER FUNCTION FOR ENERGY RATE ---
 def energy_rate(speed, terrain, weather, braking, acceleration):
     rate = 0.15
-    if speed <= 50: rate = 0.12
-    elif speed > 80: rate = 0.18
-    if terrain == "Hilly": rate *= 1.2
-    if weather == "Hot": rate *= 1.1
-    if weather == "Cold": rate *= 1.15
+    if speed <= 50:
+        rate = 0.12
+    elif speed > 80:
+        rate = 0.18
+    if terrain == "Hilly":
+        rate *= 1.2
+    if weather == "Hot":
+        rate *= 1.1
+    if weather == "Cold":
+        rate *= 1.15
     rate *= 1 + 0.05 * braking + 0.07 * acceleration
     return rate
 
-# --- GEMINI CHAT FUNCTION ---
+# --- GEMINI CHAT FUNCTION (UPDATED MODEL) ---
 def gemini_chat_completion(prompt):
     try:
         genai.configure(api_key=st.secrets["gemini"]["api_key"])
-        # ✅ Updated model name
-        model = genai.GenerativeModel("gemini-1.5-flash-latest")
+        # ✅ Using advanced Gemini 2.5 model
+        model = genai.GenerativeModel("models/gemini-2.5-pro-preview-06-05")
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
