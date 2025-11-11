@@ -51,7 +51,8 @@ def energy_rate(speed, terrain, weather, braking, acceleration):
 def gemini_chat_completion(prompt):
     try:
         genai.configure(api_key=st.secrets["gemini"]["api_key"])
-        model = genai.GenerativeModel("gemini-1.5-flash")  # free tier model
+        # ✅ Updated model name
+        model = genai.GenerativeModel("gemini-1.5-flash-latest")
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
