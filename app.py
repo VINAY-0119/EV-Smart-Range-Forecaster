@@ -57,7 +57,7 @@ def gemini_chat_completion(prompt):
     try:
         genai.configure(api_key=st.secrets["gemini"]["api_key"])
         # ✅ Using advanced Gemini 2.5 model
-        model = genai.GenerativeModel("models/gemini-2.5-pro-preview-06-05")
+        model = genai.GenerativeModel("models/gemini-2.0-flash-lite")
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
