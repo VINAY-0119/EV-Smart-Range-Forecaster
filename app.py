@@ -4,7 +4,7 @@ import joblib
 import time
 import random
 import requests
-import openai  # add openai import
+import google.generativeai as genai  # ✅ Gemini import
 
 # --- PATCH sklearn _RemainderColsList ISSUE ---
 import sklearn.compose._column_transformer as ctf
@@ -47,19 +47,15 @@ def energy_rate(speed, terrain, weather, braking, acceleration):
     rate *= 1 + 0.05 * braking + 0.07 * acceleration
     return rate
 
-# --- OPENAI CHAT FUNCTION ---
-def openai_chat_completion(messages):
-    openai.api_key = st.secrets["openai"]["api_key"]
+# --- GEMINI CHAT FUNCTION ---
+def gemini_chat_completion(prompt):
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            max_tokens=300,
-            temperature=0.7
-        )
-        return response.choices[0].message.content.strip()
+        genai.configure(api_key=st.secrets["gemini"]["api_key"])
+        model = genai.GenerativeModel("gemini-1.5-flash")  # free tier model
+        response = model.generate_content(prompt)
+        return response.text
     except Exception as e:
-        return f"⚠️ OpenAI API error: {type(e).__name__} - {e}"
+        return f"⚠️ Gemini API error: {type(e).__name__} - {e}"
 
 # --- PAGE STYLING ---
 st.markdown("""
@@ -178,10 +174,10 @@ with col3:
     - **Avg User Range:** 412 km  
     """)
 
-# --- CHATBOT SECTION USING OPENAI GPT-4 ---
+# --- CHATBOT SECTION USING GEMINI ---
 st.divider()
-st.markdown("<div class='section-title'>🤖 EV Chat Assistant (GPT-4)</div>", unsafe_allow_html=True)
-st.info("Ask questions like: 'What’s my range at 100 km/h in hot weather on hilly terrain?' or 'How does cold weather affect my EV?'")
+st.markdown("<div class='section-title'>🤖 EV Chat Assistant (Gemini AI)</div>", unsafe_allow_html=True)
+st.info("Ask things like: 'What’s my range at 100 km/h in hot weather on hilly terrain?' or 'How does cold weather affect EV efficiency?'")
 
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = []
@@ -198,7 +194,7 @@ if prompt:
         st.markdown(prompt)
 
     with st.spinner("Thinking..."):
-        ai_response = openai_chat_completion(st.session_state.chat_messages)
+        ai_response = gemini_chat_completion(prompt)
 
     with st.chat_message("assistant"):
         st.markdown(ai_response)
@@ -210,4 +206,4 @@ if st.button("Clear Chat"):
     st.session_state.chat_messages = []
 
 # --- FOOTER ---
-st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + OpenAI GPT-4</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 EV Predictor | Powered by Streamlit + Gemini AI</div>", unsafe_allow_html=True)
