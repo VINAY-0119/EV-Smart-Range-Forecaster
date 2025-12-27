@@ -1,4 +1,4 @@
-# ⚡ EV Range Predictor 🚗
+# ⚡EV-Smart-Range-Forecaster 🚗
 
 A professional Streamlit web application that predicts the driving range of an electric vehicle (EV) under different driving and environmental conditions such as speed, temperature, terrain, and weather.  
 It provides real-time insights into battery performance and helps users understand how driving behavior affects efficiency.
@@ -7,7 +7,7 @@ It provides real-time insights into battery performance and helps users understa
 
 ## 🧭 Overview
 
-The EV Range Predictor uses a trained machine learning model to estimate the remaining State of Charge (SoC) and expected range (km) of an electric vehicle.  
+The EV-Smart-Range-Forecaster uses a trained machine learning model to estimate the remaining State of Charge (SoC) and expected range (km) of an electric vehicle.  
 It allows users to input variables like speed, terrain, and weather to see how these affect range and battery life.
 
 This tool is useful for:
@@ -19,7 +19,7 @@ This tool is useful for:
 
 ## 🚀 Features
 
-- Real-time range prediction using ML model (ev_range_predictor_reduced.pkl)
+- EV-Smart-Range-Forecaster using ML model (ev_range_predictor_reduced.pkl)
 - Interactive Streamlit dashboard for easy input and live feedback
 - Professional UI design with custom CSS and clean layout
 - Dynamic insights on SoC, energy use, and driving range
@@ -31,8 +31,8 @@ This tool is useful for:
 ## ⚙️ Installation & Running the App
 
 ### Step 1: Clone the Repository
-git clone https://github.com/yourusername/ev-range-predictor.git
-cd ev-range-predictor
+git clone https://github.com/yourusername/EV-Smart-Range-Forecaster.git
+cd EV-Smart-Range-Forecaster
 
 ### Step 2: Install Dependencies
 pip install streamlit pandas joblib openai
@@ -169,7 +169,7 @@ Use the chatbot to ask any additional questions or for driving advice.
 
 ## 📁 Project Structure
 
-EV-Range-Predictor/  
+EV-Smart-Range-Forecaster/  
 │  
 ├── app.py                          # Main Streamlit application  
 ├── ev_range_predictor_reduced.pkl  # Trained ML model  
