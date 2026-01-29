@@ -15,7 +15,7 @@ if not hasattr(ctf, '_RemainderColsList'):
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="EV Range Predictor",
+    page_title="EV-Smart-Range-Forecaster",
     page_icon="🚗",
     layout="wide",
     initial_sidebar_state="collapsed"
